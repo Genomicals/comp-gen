@@ -1,8 +1,7 @@
-use std::env;
+mod algorithms;
+
 use std::fs;
-
-pub mod algorithms;
-
+use clap::{arg, command};
 
 /// Used to record the name of a string
 #[derive(Debug)]
@@ -44,6 +43,24 @@ fn read_file(file: &str) -> String {
 
 /// Main entry point
 fn main() {
+
+    // Process the arguments with clap
+    let args: clap::ArgMatches = command!()
+        .arg(arg!(
+            -c --config <FILE> "Sets a custom config file"
+        ))
+        .arg(arg!(
+            --needleman "Run the Needleman-Wunsch algorithm"
+        ))
+        .arg(arg!(
+            --smith "Run the Smith-Waterman algorithm"
+        ))
+        .arg(arg!(
+            [FILE] "Strings to operate on"
+        ))
+        .get_matches(); // run clap
+
+    // Initialize default config settings
     let mut config = Config {
         true_match: 1,
         mismatch: -2,
@@ -52,6 +69,15 @@ fn main() {
     };
 
     // Read the config file
+    let parameters_file: &str;
+    match args.get_one::<String>("config") { //grab either the provided config or the default
+        None => {
+            parameters_file = "parameters.config";
+        },
+        Some(file) => {
+            parameters_file = &file;
+        }
+    }
     let parameters = read_file("parameters.config");
     let config_lines = parameters.lines();
     for line in config_lines {
@@ -74,10 +100,19 @@ fn main() {
             }
         }
     }
-
     println!("Config file: {:?}", config);
     
-    let strings = read_file("input.fasta");
+    // Read the strings file
+    let strings_file: &str;
+    match args.get_one::<String>("FILE") { //grab either the provided config or the default
+        None => {
+            panic!("Could not retrieve a string file");
+        },
+        Some(file) => {
+            strings_file = &file;
+        }
+    }
+    let strings = read_file(strings_file);
     let string_lines = strings.lines();
     let mut string_vec: Vec<NamedString> = Vec::new();
     for line in string_lines {
