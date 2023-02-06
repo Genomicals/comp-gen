@@ -78,7 +78,7 @@ fn main() {
             parameters_file = &file;
         }
     }
-    let parameters = read_file("parameters.config");
+    let parameters = read_file(parameters_file);
     let config_lines = parameters.lines();
     for line in config_lines {
         let words: Vec<&str> = line.split_ascii_whitespace().collect();
