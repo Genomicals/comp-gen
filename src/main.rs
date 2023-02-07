@@ -89,7 +89,7 @@ fn main() {
             }
         }
     }
-    println!("Config file: {:?}", config);
+    //println!("Config file: {:?}", config);
     
     // Read the strings file
     let strings_file: &str;
@@ -113,12 +113,16 @@ fn main() {
         }
     }
 
-    println!("Input strings:");
-    println!("**************");
-    println!();
-    for str in &string_vec {
-        println!("{:?}", str);
-    }
+    //println!("Input strings:");
+    //println!("**************");
+    //println!();
+    //for str in &string_vec {
+    //    println!("{:?}", str);
+    //}
+
+    println!("Scores:    match = {}, mismatch = {}, h = {}, g = {}", config.true_match, config.mismatch, config.h, config.g);
+    println!("Sequence 1 = \"{}\", length = {} characters", string_vec[0].name, string_vec[0].str.len());
+    println!("Sequence 2 = \"{}\", length = {} characters", string_vec[1].name, string_vec[1].str.len());
 
     match args.get_one::<String>("ALG").unwrap().parse::<i32>() {
         Err(_) => {
@@ -131,7 +135,7 @@ fn main() {
             smith_waterman(&string_vec[0].str, &string_vec[1].str, &config);
         },
         _ => {
-            panic!("Invalid input for required command-line option: ALG")
+            panic!("Invalid input for required command-line option: ALG");
         }
     }
 }

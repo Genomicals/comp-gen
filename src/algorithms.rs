@@ -30,8 +30,8 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
         matrix.push(lis); //push the new list of cells to the matrix
     }
 
-    println!("First string: {:?}", s1);
-    println!("Second string: {:?}", s2);
+    //println!("First string: {:?}", s1);
+    //println!("Second string: {:?}", s2);
 
     /*
    
@@ -90,9 +90,9 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     }
 
     // fill in the inside
-    let mut s_score: i32 = 0;
-    let mut d_score: i32 = 0;
-    let mut i_score: i32 = 0;
+    let mut s_score: i32;
+    let mut d_score: i32;
+    let mut i_score: i32;
     for i in 1..s1.len()+1 {
         for j in 1..s2.len()+1 {
 
@@ -157,10 +157,46 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
         }
     }
 
-    // MATRIX IS WORKING
+    // start the retrace
+    let mut s1_str: String = String::with_capacity(s1.len() + s2.len());
+    let mut s2_str: String = String::with_capacity(s1.len() + s2.len());
+    let mut ma_str: String = String::with_capacity(s1.len() + s2.len());
+    let mut i: usize = s1.len();
+    let mut j: usize = s2.len();
+    
+    while i != 0 || j != 0 {
+        if matrix[i][j].d_score > matrix[i][j].i_score && matrix[i][j].d_score > matrix[i][j].s_score { //move up
+            s1_str.push(s1.chars().nth(i-1).unwrap());
+            s2_str.push('-');
+            ma_str.push(' ');
+            
+            i -= 1;
+        } else if matrix[i][j].i_score > matrix[i][j].d_score && matrix[i][j].i_score > matrix[i][j].s_score { //move left
+            s2_str.push(s2.chars().nth(j-1).unwrap());
+            s1_str.push('-');
+            ma_str.push(' ');
 
-    println!("{:?}", matrix);
+            j -= 1;
+        } else { //move diagonally
+            s1_str.push(s1.chars().nth(i-1).unwrap());
+            s2_str.push(s2.chars().nth(j-1).unwrap());
+            if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() {
+                ma_str.push('|');
+            } else {
+                ma_str.push(' ');
+            }
 
+            i -= 1;
+            j -= 1;
+        }
+    }
+    s1_str = s1_str.chars().rev().collect::<String>();
+    ma_str = ma_str.chars().rev().collect::<String>();
+    s2_str = s2_str.chars().rev().collect::<String>();
+
+    println!("{}", s1_str);
+    println!("{}", ma_str);
+    println!("{}", s2_str);
 
 }
 
@@ -194,6 +230,8 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
 // Number of:  matches = 105, mismatches = 6, opening gaps = 2, gap 
 // extensions = 14
 // Identities = 105/125 (84%), Gaps = 14/125 (11%)
+
+// % identity = # of matches in alignment/alignment length
 
 
 /*
