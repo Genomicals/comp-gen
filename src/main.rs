@@ -27,15 +27,6 @@ pub struct Config {
 }
 
 
-/// Makes up one cell of a table
-#[derive(Debug)]
-pub struct Cell {
-    s_score: i32,
-    d_score: i32,
-    i_score: i32    
-}
-
-
 /// Reads a file and returns it as a string
 fn read_file(file: &str) -> String {
     fs::read_to_string(file).expect("Error reading file")
@@ -190,3 +181,4 @@ fn main() {
 // Number of:  matches = 105, mismatches = 6, opening gaps = 2, gap 
 // extensions = 14
 // Identities = 105/125 (84%), Gaps = 14/125 (11%)
+
