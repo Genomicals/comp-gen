@@ -16,6 +16,23 @@ impl Cell {
             i_score: 0,
         }
     }
+
+    /// Super-optimized comparison maxxing algorithm
+    fn score(&self) -> i32 {
+        if self.d_score > self.i_score {
+            if self.d_score > self.s_score {
+                self.d_score
+            } else {
+                self.s_score
+            }
+        } else {
+            if self.i_score > self.s_score {
+                self.i_score
+            } else {
+                self.s_score
+            }
+        }
+    }
 }
 
 
@@ -163,15 +180,22 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     let mut ma_str: String = String::with_capacity(s1.len() + s2.len());
     let mut i: usize = s1.len();
     let mut j: usize = s2.len();
+    //let mut matches: i32 = 0;
+    //let mut mismatches: i32 = 0;
+    //let mut opening_gaps: i32 = 0;
+    //let mut gap_extensions: i32 = 0;
     
     while i != 0 || j != 0 {
-        if matrix[i][j].d_score > matrix[i][j].i_score && matrix[i][j].d_score > matrix[i][j].s_score { //move up
+        let up = matrix[i-1][j].score();
+        let left = matrix[i][j-1].score();
+        let diag = matrix[i-1][j-1].score();
+        if up > left && up > diag {
             s1_str.push(s1.chars().nth(i-1).unwrap());
             s2_str.push('-');
             ma_str.push(' ');
             
             i -= 1;
-        } else if matrix[i][j].i_score > matrix[i][j].d_score && matrix[i][j].i_score > matrix[i][j].s_score { //move left
+        } else if left > up && left > diag {
             s2_str.push(s2.chars().nth(j-1).unwrap());
             s1_str.push('-');
             ma_str.push(' ');
@@ -180,10 +204,12 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
         } else { //move diagonally
             s1_str.push(s1.chars().nth(i-1).unwrap());
             s2_str.push(s2.chars().nth(j-1).unwrap());
-            if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() {
+            if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() { //if match
                 ma_str.push('|');
+                //matches += 1;
             } else {
                 ma_str.push(' ');
+                //mismatches += 1;
             }
 
             i -= 1;
@@ -197,6 +223,40 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     println!("{}", s1_str);
     println!("{}", ma_str);
     println!("{}", s2_str);
+
+    let mut matches = 0;
+    let mut mismatches = 0;
+    let mut in_gap = false;
+    let mut gap_start = 0;
+    let mut gap_extension = 0;
+    for i in 0..s1_str.len() {
+        if ma_str.as_bytes()[i] == '|' as u8 { //found a match
+            in_gap = false;
+            matches += 1;
+        } else { //not a match
+            if s1_str.as_bytes()[i] == '-' as u8 || s2_str.as_bytes()[i] == '-' as u8 { //encountered a gap
+                if !in_gap {
+                    in_gap = true;
+                    gap_start += 1;
+                    gap_extension += 1;
+                } else {
+                    gap_extension += 1;
+                }
+            } else { //not a match or a gap, ie a mismatch
+                in_gap = false;
+                mismatches += 1;
+            }
+        }
+    }
+
+    //println!("{:?}", matrix);
+
+    println!("Report:");
+    println!("Global optimal score = {}", matrix[s1.len()][s2.len()].score());
+    println!("Number of:  matches = {}, mismatches = {}, opening gaps = {}, gap extensions = {}", matches, mismatches, gap_start, gap_extension);
+    println!("Identities = {}/{} ({}%), Gaps = {}/{} ({}%)",
+        matches, s1_str.len(), (Into::<f64>::into(matches) / s1_str.len() as f64 * 100.0) as i32,
+        gap_extension, s1_str.len(), (Into::<f64>::into(gap_extension) / s1_str.len() as f64 * 100.0) as i32);
 
 }
 
