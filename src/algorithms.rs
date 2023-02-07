@@ -1,7 +1,7 @@
-use crate::{Config, NamedString, Cell};
+use crate::{Config, Cell};
 
 /// Implements Needleman-Wunsch
-fn needleman_wunsch(s1: String, s2: String, config: &Config) {
+pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     let mut matrix: Vec<Vec<Cell>> = Vec::with_capacity(s1.len());
     for _ in 0..s1.len() {
         matrix.push(Vec::with_capacity(s2.len()));
@@ -10,12 +10,11 @@ fn needleman_wunsch(s1: String, s2: String, config: &Config) {
 
 
 /// Implements Smith-Waterman
-fn smith_waterman(s1: String, s2: String, config: &Config) {
+pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
     let mut matrix: Vec<Vec<Cell>> = Vec::with_capacity(s1.len());
     for _ in 0..s1.len() {
         matrix.push(Vec::with_capacity(s2.len()));
     }
-    
 }
 
 

@@ -2,6 +2,7 @@ mod algorithms;
 
 use std::fs;
 use clap::{arg, command};
+use algorithms::{needleman_wunsch, smith_waterman};
 
 /// Used to record the name of a string
 #[derive(Debug)]
@@ -18,7 +19,7 @@ impl NamedString {
 
 /// Used to keep config settings in one place
 #[derive(Debug)]
-struct Config {
+pub struct Config {
     true_match: i32,
     mismatch: i32,
     h: i32,
@@ -28,7 +29,7 @@ struct Config {
 
 /// Makes up one cell of a table
 #[derive(Debug)]
-struct Cell {
+pub struct Cell {
     s_score: i32,
     d_score: i32,
     i_score: i32    
@@ -127,9 +128,21 @@ fn main() {
     println!("Input strings:");
     println!("**************");
     println!();
-    for str in string_vec {
+    for str in &string_vec {
         println!("{:?}", str);
     }
+
+    // run smith-waterman
+    if let Some(true) = args.get_one::<bool>("smith") {
+        smith_waterman(&string_vec[0].str, &string_vec[1].str, &config);
+    }
+
+    // run needleman_wunsch
+    if let Some(true) = args.get_one::<bool>("needleman") {
+        needleman_wunsch(&string_vec[0].str, &string_vec[1].str, &config);
+    }
+
+
 }
 
 
