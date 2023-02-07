@@ -39,16 +39,13 @@ fn main() {
     // Process the arguments with clap
     let args: clap::ArgMatches = command!()
         .arg(arg!(
-            -c --config <FILE> "Sets a custom config file"
+            [FILE] "File containing the strings to compare"
         ))
         .arg(arg!(
-            --needleman "Run the Needleman-Wunsch algorithm"
+            [ALG] "0: global, 1: local"
         ))
         .arg(arg!(
-            --smith "Run the Smith-Waterman algorithm"
-        ))
-        .arg(arg!(
-            [FILE] "Strings to operate on"
+            [CONFIG] "Path to custom config file"
         ))
         .get_matches(); // run clap
 
@@ -62,7 +59,7 @@ fn main() {
 
     // Read the config file
     let parameters_file: &str;
-    match args.get_one::<String>("config") { //grab either the provided config or the default
+    match args.get_one::<String>("CONFIG") { //grab either the provided config or the default
         None => {
             parameters_file = "parameters.config";
         },
@@ -98,7 +95,7 @@ fn main() {
     let strings_file: &str;
     match args.get_one::<String>("FILE") { //grab either the provided config or the default
         None => {
-            panic!("Could not retrieve a string file");
+            panic!("Missing required command-line option: FILE");
         },
         Some(file) => {
             strings_file = &file;
@@ -123,17 +120,20 @@ fn main() {
         println!("{:?}", str);
     }
 
-    // run smith-waterman
-    if let Some(true) = args.get_one::<bool>("smith") {
-        smith_waterman(&string_vec[0].str, &string_vec[1].str, &config);
+    match args.get_one::<String>("ALG").unwrap().parse::<i32>() {
+        Err(_) => {
+            panic!("Missing required command-line option: ALG");
+        },
+        Ok(0) => { // run needleman-wunsch
+            needleman_wunsch(&string_vec[0].str, &string_vec[1].str, &config);
+        },
+        Ok(1) => { // run smith-waterman
+            smith_waterman(&string_vec[0].str, &string_vec[1].str, &config);
+        },
+        _ => {
+            panic!("Invalid input for required command-line option: ALG")
+        }
     }
-
-    // run needleman_wunsch
-    if let Some(true) = args.get_one::<bool>("needleman") {
-        needleman_wunsch(&string_vec[0].str, &string_vec[1].str, &config);
-    }
-
-
 }
 
 
