@@ -216,13 +216,77 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             j -= 1;
         }
     }
+    
     s1_str = s1_str.chars().rev().collect::<String>();
     ma_str = ma_str.chars().rev().collect::<String>();
     s2_str = s2_str.chars().rev().collect::<String>();
+    
+    // s1       1    AC
+    // string2  2
+    let mut s1_header = config.s1_name.clone() + "  ";
+    let mut s2_header = config.s2_name.clone() + "  ";
 
-    println!("{}", s1_str);
-    println!("{}", ma_str);
-    println!("{}", s2_str);
+    // pad the shorter string
+    if s1_header.len() > s2_header.len() {
+        s2_header += &" ".repeat(s1_header.len() - s2_header.len());
+    } else {
+        s1_header += &" ".repeat(s2_header.len() - s1_header.len());
+    }
+
+    let ma_header = " ".repeat(s1_header.len());
+
+    let mut s1_num_len: usize; //length of the number, for padding reasons
+    let mut s2_num_len: usize; //length of the number, for padding reasons
+    let mut s1_chunk: &str; //60 chars
+    let mut s2_chunk: &str;
+    let mut ma_chunk: &str;
+    let mut s1_counter = 0;
+    let mut s2_counter = 0;
+    for i in 0..s1_str.len()/60 {
+        //print a row of 60
+        //s1_counter += 60;
+        //s2_counter += 60;
+                                              
+        s1_chunk = &s1_str[i*60..(i+1)*60]; //the chunk we're printing now
+        s2_chunk = &s2_str[i*60..(i+1)*60];
+        ma_chunk = &ma_str[i*60..(i+1)*60];
+
+        s1_counter += 60 - s1_chunk.matches('-').count(); //update the current location
+        s2_counter += 60 - s2_chunk.matches('-').count();
+
+        s1_num_len = (s1_counter+1).to_string().len(); //stringify the current location
+        s2_num_len = (s2_counter+1).to_string().len();
+
+        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(5-s1_num_len), s1_chunk, s1_counter);
+        println!("{}{}{}", ma_header, " ".repeat(5), ma_chunk);
+        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(5-s2_num_len), s2_chunk, s2_counter);
+        println!();
+
+        if i == s1_str.len()/60 - 1 { //ie, in the final loop
+            s1_chunk = &s1_str[(i+1)*60..]; //the chunk we're printing now
+            s2_chunk = &s2_str[(i+1)*60..];
+            ma_chunk = &ma_str[(i+1)*60..];
+
+            s1_counter += s1_chunk.matches('-').count(); //update the current location
+            s2_counter += s2_chunk.matches('-').count();
+
+            s1_num_len = (s1_counter+1).to_string().len(); //stringify the current location
+            s2_num_len = (s2_counter+1).to_string().len();
+
+            println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(5-s1_num_len), s1_chunk, s1.len());
+            println!("{}{}{}", ma_header, " ".repeat(5), ma_chunk);
+            println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(5-s2_num_len), s2_chunk, s2.len());        }
+    }
+
+
+    //String leftovers = s1_str.len() % 60
+        //print a row with leftovers
+
+
+
+    //println!("{}", s1_str);
+    //println!("{}", ma_str);
+    //println!("{}", s2_str);
 
     let mut matches = 0;
     let mut mismatches = 0;
@@ -250,10 +314,10 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     }
 
     //println!("{:?}", matrix);
-
-    println!("Report:");
-    println!("Global optimal score = {}", matrix[s1.len()][s2.len()].score());
-    println!("Number of:  matches = {}, mismatches = {}, opening gaps = {}, gap extensions = {}", matches, mismatches, gap_start, gap_extension);
+    println!("\n\n");
+    println!("Report:\n");
+    println!("Global optimal score = {}\n", matrix[s1.len()][s2.len()].score());
+    println!("Number of:  matches = {}, mismatches = {}, opening gaps = {}, gap extensions = {}\n", matches, mismatches, gap_start, gap_extension);
     println!("Identities = {}/{} ({}%), Gaps = {}/{} ({}%)",
         matches, s1_str.len(), (Into::<f64>::into(matches) / s1_str.len() as f64 * 100.0) as i32,
         gap_extension, s1_str.len(), (Into::<f64>::into(gap_extension) / s1_str.len() as f64 * 100.0) as i32);

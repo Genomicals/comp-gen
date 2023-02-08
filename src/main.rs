@@ -24,6 +24,8 @@ pub struct Config {
     mismatch: i32,
     h: i32,
     g: i32,
+    s1_name: String,
+    s2_name: String,
 }
 
 
@@ -55,6 +57,8 @@ fn main() {
         mismatch: -2,
         h: -5,
         g: -1,
+        s1_name: String::new(),
+        s2_name: String::new(),
     };
 
     // Read the config file
@@ -113,16 +117,15 @@ fn main() {
         }
     }
 
-    //println!("Input strings:");
-    //println!("**************");
-    //println!();
-    //for str in &string_vec {
-    //    println!("{:?}", str);
-    //}
-
+    config.s1_name = string_vec[0].name.clone();
+    config.s2_name = string_vec[1].name.clone();
+    println!("OUTPUT:");
+    println!("********\n");
     println!("Scores:    match = {}, mismatch = {}, h = {}, g = {}", config.true_match, config.mismatch, config.h, config.g);
+    println!();
     println!("Sequence 1 = \"{}\", length = {} characters", string_vec[0].name, string_vec[0].str.len());
     println!("Sequence 2 = \"{}\", length = {} characters", string_vec[1].name, string_vec[1].str.len());
+    println!();
 
     match args.get_one::<String>("ALG").unwrap().parse::<i32>() {
         Err(_) => {
