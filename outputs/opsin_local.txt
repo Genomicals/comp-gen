@@ -1,0 +1,41 @@
+OUTPUT:
+********
+
+Scores:    match = 1, mismatch = -2, h = -5, g = -1
+
+Sequence 1 = "NC_000007.14:c128775790-128772489 Homo sapiens chromosome 7, GRCh38.p7 Primary Assembly", length = 3302 characters
+Sequence 2 = "NC_000072.6:c29380513-29376671 Mus musculus strain C57BL/6J chromosome 6, GRCm38.p4 C57BL/6J", length = 3843 characters
+
+NC_000007.14:c128775790-128772489 Homo sapiens chromosome 7, GRCh38.p7 Primary Assembly       15   GGAGGAAGAGTTTTATCTGTTCAAAAATATCTCTTCAGTGGGGCCGTGGGATGGGCCTCA  74
+                                                                                                   | |||| || ||||| |||||  | ||||||||||| |||||||| ||||||||||||||
+NC_000072.6:c29380513-29376671 Mus musculus strain C57BL/6J chromosome 6, GRCm38.p4 C57BL/6J  108  G-AGGATGACTTTTACCTGTTTCAGAATATCTCTTCGGTGGGGCCCTGGGATGGGCCTCA  166
+
+NC_000007.14:c128775790-128772489 Homo sapiens chromosome 7, GRCh38.p7 Primary Assembly       75   GTACCACATTGCCCCTGTCTGGGCCTTCTACCTCCAGGCAGCTTTCATGGGCACTGTCTT  134
+                                                                                                   ||||||| |||| |||||||||||||||  |||||||||||| ||||||||   ||||||
+NC_000072.6:c29380513-29376671 Mus musculus strain C57BL/6J chromosome 6, GRCm38.p4 C57BL/6J  167  GTACCACCTTGCTCCTGTCTGGGCCTTCCGCCTCCAGGCAGCCTTCATGGGATTTGTCTT  226
+
+NC_000007.14:c128775790-128772489 Homo sapiens chromosome 7, GRCh38.p7 Primary Assembly       135  CCTTATAGGGTTCCCACTCAATGCCATGGTGCTGGTGGCCACACTGCGCTACAAAAAGTT  194
+                                                                                                   | || | |||  ||||||||||||||| |||||||||||||||||||  |||||||||||
+NC_000072.6:c29380513-29376671 Mus musculus strain C57BL/6J chromosome 6, GRCm38.p4 C57BL/6J  227  CTTTGTGGGGACCCCACTCAATGCCATAGTGCTGGTGGCCACACTGCATTACAAAAAGTT  286
+
+NC_000007.14:c128775790-128772489 Homo sapiens chromosome 7, GRCh38.p7 Primary Assembly       195  GCGGCAGCCCCTCAACTACATTCTGGTCAACGTGTCCTTCGGAGGCTTCCTCCTCTGCAT  254
+                                                                                                   ||| |||||||||||||| ||||||||||| || ||| |||| ||||||||| |||||||
+NC_000072.6:c29380513-29376671 Mus musculus strain C57BL/6J chromosome 6, GRCm38.p4 C57BL/6J  287  GCGACAGCCCCTCAACTATATTCTGGTCAATGTATCCCTCGGGGGCTTCCTCTTCTGCAT  346
+
+NC_000007.14:c128775790-128772489 Homo sapiens chromosome 7, GRCh38.p7 Primary Assembly       255  CTTCTCTGTCTTCCCTGTCTTCGTCGCCAGCTGTAACGGATACTTCGTCTTCGGTCGCCA  314
+                                                                                                   ||||||||||||| | |||||| ||||||||||| ||||||||||| |||| ||||||||
+NC_000072.6:c29380513-29376671 Mus musculus strain C57BL/6J chromosome 6, GRCm38.p4 C57BL/6J  347  CTTCTCTGTCTTCACAGTCTTCATCGCCAGCTGTCACGGATACTTCCTCTTTGGTCGCCA  406
+
+NC_000007.14:c128775790-128772489 Homo sapiens chromosome 7, GRCh38.p7 Primary Assembly       315  TGTTTGTGCTTTGGAGGGCTTCCTGGGCACTGTAGCAGGTACTGCAGG  362
+                                                                                                   |||||||||| |||||| |||| ||||| ||||||||||||||| |||
+NC_000072.6:c29380513-29376671 Mus musculus strain C57BL/6J chromosome 6, GRCm38.p4 C57BL/6J  407  TGTTTGTGCTCTGGAGGCCTTCTTGGGCTCTGTAGCAGGTACTGAAGG  454
+
+
+
+Report:
+
+Local optimal score = 221
+
+Number of:  matches = 305, mismatches = 42, opening gaps = 1, gap extensions = 1
+
+Identities = 305/348 (87%), Gaps = 1/348 (0%)

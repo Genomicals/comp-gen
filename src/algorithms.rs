@@ -464,9 +464,9 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
         s1_num_len = (s1_counter+1).to_string().len(); //stringify the current location
         s2_num_len = (s2_counter+1).to_string().len();
 
-        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(5-s1_num_len), s1_chunk, s1.len());
+        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(5-s1_num_len), s1_chunk, s1_counter+leftover);
         println!("{}{}{}", ma_header, " ".repeat(5), ma_chunk);
-        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(5-s2_num_len), s2_chunk, s2.len());
+        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(5-s2_num_len), s2_chunk, s2_counter+leftover);
     }
 
     let mut matches = 0;
