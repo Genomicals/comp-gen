@@ -1,4 +1,5 @@
 mod algorithms;
+mod structs;
 
 use std::fs;
 use clap::{arg, command};
