@@ -1,7 +1,32 @@
-//#[derive(Debug)]
-//pub struct Matrix {
-//    matrix: Vec<Vec<>>
-//}
+#[derive(Debug)]
+pub struct Matrix<T: Default + Clone> {
+    matrix: Vec<T>,
+    x: usize,
+    y: usize,
+}
+impl<T: Default + Clone> Matrix<T> {
+
+    /// Create a new matrix with the given dimensions
+    pub fn with_shape(x: usize, y: usize) -> Self {
+        Matrix {
+            matrix: vec![T::default(); x*y],
+            x: x,
+            y: y,
+        }
+    }
+
+
+    /// Returns an immutable reference to item at the given index
+    pub fn index(&self, x: usize, y: usize) -> &T {
+        &self.matrix[self.x*x+y]
+    }
+
+
+    /// Returns an immutable reference to item at the given index
+    pub fn index_mut(&mut self, x: usize, y: usize) -> &mut T {
+        &mut self.matrix[self.x*x+y]
+    }
+}
 
 
 /// Makes up one cell of a table
