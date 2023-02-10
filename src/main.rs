@@ -4,6 +4,7 @@ mod structs;
 use std::fs;
 use clap::{arg, command};
 use algorithms::{needleman_wunsch, smith_waterman};
+use structs::Config;
 
 /// Used to record the name of a string
 #[derive(Debug)]
@@ -15,18 +16,6 @@ impl NamedString {
     fn name(name: &str) -> Self {
         NamedString { name: String::from(name), str: String::new() }
     }
-}
-
-
-/// Used to keep config settings in one place
-#[derive(Debug)]
-pub struct Config {
-    true_match: i32,
-    mismatch: i32,
-    h: i32,
-    g: i32,
-    s1_name: String,
-    s2_name: String,
 }
 
 

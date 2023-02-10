@@ -1,8 +1,4 @@
-use crate::{Config};
-use crate::structs::Cell;
-
-
-
+use crate::structs::{Config, Cell};
 
 /// Implements Needleman-Wunsch for global alignment
 pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {

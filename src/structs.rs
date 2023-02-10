@@ -37,3 +37,16 @@ impl Cell {
         }
     }
 }
+
+
+/// Used to keep config settings in one place
+#[derive(Debug)]
+pub struct Config {
+    pub true_match: i32,
+    pub mismatch: i32,
+    pub h: i32,
+    pub g: i32,
+    pub s1_name: String,
+    pub s2_name: String,
+}
+
