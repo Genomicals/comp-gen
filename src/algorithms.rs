@@ -1,35 +1,36 @@
-use crate::structs::{Config, Cell};
+use crate::structs::{Config, Cell, Matrix};
 
 /// Implements Needleman-Wunsch for global alignment
 pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
-    let mut matrix: Vec<Vec<Cell>> = Vec::with_capacity(s1.len() + 1);
-    for _ in 0..s1.len()+1 {
-        let mut lis: Vec<Cell> = Vec::with_capacity(s2.len() + 1);
-        for _ in 0..s2.len()+1 {
-            lis.push(Cell::new())
-        }
-        matrix.push(lis); //push the new list of cells to the matrix
-    }
+    //let mut matrix: Vec<Vec<Cell>> = Vec::with_capacity(s1.len() + 1);
+    //for _ in 0..s1.len()+1 {
+    //    let mut lis: Vec<Cell> = Vec::with_capacity(s2.len() + 1);
+    //    for _ in 0..s2.len()+1 {
+    //        lis.push(Cell::new())
+    //    }
+    //    matrix.push(lis); //push the new list of cells to the matrix
+    //}
+    let mut matrix: Matrix<Cell> = Matrix::with_shape(s1.len()+1, s2.len()+1);
 
     let real_min = std::i32::MIN - config.h - config.g;
 
     // setup corner
-    matrix[0][0].s_score = 0;
-    matrix[0][0].d_score = 0;
-    matrix[0][0].i_score = 0;
+    matrix.index_mut(0, 0).s_score = 0;
+    matrix.index_mut(0, 0).d_score = 0;
+    matrix.index_mut(0, 0).i_score = 0;
     
     // setup left side
     for i in 1..s1.len()+1 {
-        matrix[i][0].s_score = real_min;
-        matrix[i][0].d_score = config.h + config.g * i as i32;
-        matrix[i][0].i_score = real_min;
+        matrix.index_mut(i, 0).s_score = real_min;
+        matrix.index_mut(i, 0).d_score = config.h + config.g * i as i32;
+        matrix.index_mut(i, 0).i_score = real_min;
     }
 
     // setup top
     for j in 1..s2.len()+1 {
-        matrix[0][j].s_score = real_min;
-        matrix[0][j].d_score = real_min;
-        matrix[0][j].i_score = config.h + config.g * j as i32;
+        matrix.index_mut(0, j).s_score = real_min;
+        matrix.index_mut(0, j).d_score = real_min;
+        matrix.index_mut(0, j).i_score = config.h + config.g * j as i32;
     }
 
     // fill in the inside
@@ -40,44 +41,44 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
         for j in 1..s2.len()+1 {
 
             // first handle d_score
-            d_score = matrix[i-1][j].d_score + config.g;
-            s_score = matrix[i-1][j].s_score + config.h + config.g;
-            i_score = matrix[i-1][j].i_score + config.h + config.g;
+            d_score = matrix.index(i-1, j).d_score + config.g;
+            s_score = matrix.index(i-1, j).s_score + config.h + config.g;
+            i_score = matrix.index(i-1, j).i_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
-                matrix[i][j].d_score = d_score;
+                matrix.index_mut(i, j).d_score = d_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix[i][j].d_score = s_score;
+                matrix.index_mut(i, j).d_score = s_score;
             } else {
-                matrix[i][j].d_score = i_score;
+                matrix.index_mut(i, j).d_score = i_score;
             }
 
             // then handle i_score
-            i_score = matrix[i-1][j].i_score + config.h;
-            d_score = matrix[i-1][j].d_score + config.h + config.g;
-            s_score = matrix[i-1][j].s_score + config.h + config.g;
+            i_score = matrix.index(i-1, j).i_score + config.h;
+            d_score = matrix.index(i-1, j).d_score + config.h + config.g;
+            s_score = matrix.index(i-1, j).s_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
-                matrix[i][j].i_score = d_score;
+                matrix.index_mut(i, j).i_score = d_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix[i][j].i_score = s_score;
+                matrix.index_mut(i, j).i_score = s_score;
             } else {
-                matrix[i][j].i_score = i_score;
+                matrix.index_mut(i, j).i_score = i_score;
             }
 
             // finally handle s_score
-            d_score = matrix[i-1][j-1].d_score;
-            i_score = matrix[i-1][j-1].i_score;
-            s_score = matrix[i-1][j-1].s_score;
+            d_score = matrix.index(i-1, j-1).d_score;
+            i_score = matrix.index(i-1, j-1).i_score;
+            s_score = matrix.index(i-1, j-1).s_score;
             let match_score = if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() {
                 config.true_match
             } else {
                 config.mismatch
             };
             if d_score > s_score && d_score > i_score {
-                matrix[i][j].s_score = d_score + match_score;
+                matrix.index_mut(i, j).s_score = d_score + match_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix[i][j].s_score = s_score + match_score;
+                matrix.index_mut(i, j).s_score = s_score + match_score;
             } else {
-                matrix[i][j].s_score = i_score + match_score;
+                matrix.index_mut(i, j).s_score = i_score + match_score;
             }
         }
     }
@@ -94,17 +95,17 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     
     while i != 0 || j != 0 {
         let up = if i > 0 { //if at edge of matrix
-            matrix[i-1][j].score()
+            matrix.index(i-1, j).score()
         } else {
             real_min
         };
         let left = if j > 0 {
-            matrix[i][j-1].score()
+            matrix.index(i, j-1).score()
         } else {
             real_min
         };
         let diag = if i > 0 && j > 0 {
-            matrix[i-1][j-1].score()
+            matrix.index(i-1, j-1).score()
         } else {
             real_min
         };
@@ -225,7 +226,7 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
 
     println!("\n\n");
     println!("Report:\n");
-    println!("Global optimal score = {}\n", matrix[s1.len()][s2.len()].score());
+    println!("Global optimal score = {}\n", matrix.index(s1.len(), s2.len()).score());
     println!("Number of:  matches = {}, mismatches = {}, opening gaps = {}, gap extensions = {}\n", matches, mismatches, gap_start, gap_extension);
     println!("Identities = {}/{} ({}%), Gaps = {}/{} ({}%)",
         matches, s1_str.len(), (Into::<f64>::into(matches) / s1_str.len() as f64 * 100.0) as i32,
@@ -235,32 +236,33 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
 
 /// Implements Smith-Waterman for local alignment
 pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
-    let mut matrix: Vec<Vec<Cell>> = Vec::with_capacity(s1.len() + 1);
-    for _ in 0..s1.len()+1 {
-        let mut lis: Vec<Cell> = Vec::with_capacity(s2.len() + 1);
-        for _ in 0..s2.len()+1 {
-            lis.push(Cell::new())
-        }
-        matrix.push(lis); //push the new list of cells to the matrix
-    }
+    //let mut matrix: Vec<Vec<Cell>> = Vec::with_capacity(s1.len() + 1);
+    //for _ in 0..s1.len()+1 {
+    //    let mut lis: Vec<Cell> = Vec::with_capacity(s2.len() + 1);
+    //    for _ in 0..s2.len()+1 {
+    //        lis.push(Cell::new())
+    //    }
+    //    matrix.push(lis); //push the new list of cells to the matrix
+    //}
+    let mut matrix: Matrix<Cell> = Matrix::with_shape(s1.len()+1, s2.len()+1);
 
     // setup corner
-    matrix[0][0].s_score = 0;
-    matrix[0][0].d_score = 0;
-    matrix[0][0].i_score = 0;
+    matrix.index_mut(0, 0).s_score = 0;
+    matrix.index_mut(0, 0).d_score = 0;
+    matrix.index_mut(0, 0).i_score = 0;
     
     // setup left side
     for i in 1..s1.len()+1 {
-        matrix[i][0].s_score = 0;
-        matrix[i][0].d_score = 0;
-        matrix[i][0].i_score = 0;
+        matrix.index_mut(i, 0).s_score = 0;
+        matrix.index_mut(i, 0).d_score = 0;
+        matrix.index_mut(i, 0).i_score = 0;
     }
 
     // setup top
     for j in 1..s2.len()+1 {
-        matrix[0][j].s_score = 0;
-        matrix[0][j].d_score = 0;
-        matrix[0][j].i_score = 0;
+        matrix.index_mut(0, j).s_score = 0;
+        matrix.index_mut(0, j).d_score = 0;
+        matrix.index_mut(0, j).i_score = 0;
     }
 
     // fill in the inside
@@ -273,59 +275,59 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
         for j in 1..s2.len()+1 {
 
             // first handle d_score
-            d_score = matrix[i-1][j].d_score + config.g;
-            s_score = matrix[i-1][j].s_score + config.h + config.g;
-            i_score = matrix[i-1][j].i_score + config.h + config.g;
+            d_score = matrix.index(i-1, j).d_score + config.g;
+            s_score = matrix.index(i-1, j).s_score + config.h + config.g;
+            i_score = matrix.index(i-1, j).i_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
-                matrix[i][j].d_score = d_score;
+                matrix.index_mut(i, j).d_score = d_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix[i][j].d_score = s_score;
+                matrix.index_mut(i, j).d_score = s_score;
             } else {
-                matrix[i][j].d_score = i_score;
+                matrix.index_mut(i, j).d_score = i_score;
             }
 
             // then handle i_score
-            i_score = matrix[i-1][j].i_score + config.h;
-            d_score = matrix[i-1][j].d_score + config.h + config.g;
-            s_score = matrix[i-1][j].s_score + config.h + config.g;
+            i_score = matrix.index(i-1, j).i_score + config.h;
+            d_score = matrix.index(i-1, j).d_score + config.h + config.g;
+            s_score = matrix.index(i-1, j).s_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
-                matrix[i][j].i_score = d_score;
+                matrix.index_mut(i, j).i_score = d_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix[i][j].i_score = s_score;
+                matrix.index_mut(i, j).i_score = s_score;
             } else {
-                matrix[i][j].i_score = i_score;
+                matrix.index_mut(i, j).i_score = i_score;
             }
 
             // finally handle s_score
-            d_score = matrix[i-1][j-1].d_score;
-            i_score = matrix[i-1][j-1].i_score;
-            s_score = matrix[i-1][j-1].s_score;
+            d_score = matrix.index(i-1, j-1).d_score;
+            i_score = matrix.index(i-1, j-1).i_score;
+            s_score = matrix.index(i-1, j-1).s_score;
             let match_score = if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() {
                 config.true_match
             } else {
                 config.mismatch
             };
             if d_score > s_score && d_score > i_score {
-                matrix[i][j].s_score = d_score + match_score;
+                matrix.index_mut(i, j).s_score = d_score + match_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix[i][j].s_score = s_score + match_score;
+                matrix.index_mut(i, j).s_score = s_score + match_score;
             } else {
-                matrix[i][j].s_score = i_score + match_score;
+                matrix.index_mut(i, j).s_score = i_score + match_score;
             }
 
             // fix all negative scores
-            if matrix[i][j].d_score < 0 {
-                matrix[i][j].d_score = 0;
+            if matrix.index(i, j).d_score < 0 {
+                matrix.index_mut(i, j).d_score = 0;
             }
-            if matrix[i][j].i_score < 0 {
-                matrix[i][j].i_score = 0;
+            if matrix.index(i, j).i_score < 0 {
+                matrix.index_mut(i, j).i_score = 0;
             }
-            if matrix[i][j].s_score < 0 {
-                matrix[i][j].s_score = 0;
+            if matrix.index(i, j).s_score < 0 {
+                matrix.index_mut(i, j).s_score = 0;
             }
 
             // check to see if this cell is the highest scoring
-            if matrix[i][j].score() > matrix[top_i][top_j].score() {
+            if matrix.index(i, j).score() > matrix.index(top_i, top_j).score() {
                 top_i = i;
                 top_j = j;
             }
@@ -339,10 +341,10 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
     let mut i: usize = top_i;
     let mut j: usize = top_j;
 
-    while matrix[i][j].score() != 0 {
-        let up = matrix[i-1][j].score();
-        let left = matrix[i][j-1].score();
-        let diag = matrix[i-1][j-1].score();
+    while matrix.index(i, j).score() != 0 {
+        let up = matrix.index(i-1, j).score();
+        let left = matrix.index(i, j-1).score();
+        let diag = matrix.index(i-1, j-1).score();
         if up > left && up > diag {
             s1_str.push(s1.chars().nth(i-1).unwrap());
             s2_str.push('-');
@@ -462,7 +464,7 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
 
     println!("\n\n");
     println!("Report:\n");
-    println!("Local optimal score = {}\n", matrix[top_i][top_j].score());
+    println!("Local optimal score = {}\n", matrix.index(top_i, top_j).score());
     println!("Number of:  matches = {}, mismatches = {}, opening gaps = {}, gap extensions = {}\n", matches, mismatches, gap_start, gap_extension);
     println!("Identities = {}/{} ({}%), Gaps = {}/{} ({}%)",
         matches, s1_str.len(), (Into::<f64>::into(matches) / s1_str.len() as f64 * 100.0) as i32,

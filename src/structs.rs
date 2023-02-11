@@ -1,8 +1,8 @@
+/// Multi-dimensional contiguous matrix
 #[derive(Debug)]
 pub struct Matrix<T: Default + Clone> {
     matrix: Vec<T>,
     x: usize,
-    y: usize,
 }
 impl<T: Default + Clone> Matrix<T> {
 
@@ -11,7 +11,6 @@ impl<T: Default + Clone> Matrix<T> {
         Matrix {
             matrix: vec![T::default(); x*y],
             x: x,
-            y: y,
         }
     }
 
@@ -30,7 +29,7 @@ impl<T: Default + Clone> Matrix<T> {
 
 
 /// Makes up one cell of a table
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Cell {
     pub s_score: i32,
     pub d_score: i32,
@@ -60,6 +59,11 @@ impl Cell {
                 self.s_score
             }
         }
+    }
+}
+impl Default for Cell {
+    fn default() -> Self {
+        Cell::new()
     }
 }
 
