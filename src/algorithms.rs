@@ -82,7 +82,7 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             d_score = cur_s.d_score;
             i_score = cur_s.i_score;
             s_score = cur_s.s_score;
-            match_score = if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() {
+            match_score = if s1.as_bytes()[i-1] == s2.as_bytes()[j-1] {
                 config.true_match
             } else {
                 config.mismatch
