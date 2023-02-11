@@ -1,4 +1,5 @@
 use crate::structs::{Config, Cell, Matrix};
+use std::time::SystemTime;
 
 /// Implements Needleman-Wunsch for global alignment
 pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
@@ -10,14 +11,16 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     //    }
     //    matrix.push(lis); //push the new list of cells to the matrix
     //}
+    let start = SystemTime::now();
     let mut matrix: Matrix<Cell> = Matrix::with_shape(s1.len()+1, s2.len()+1);
 
     let real_min = std::i32::MIN - config.h - config.g;
 
     // setup corner
-    matrix.index_mut(0, 0).s_score = 0;
-    matrix.index_mut(0, 0).d_score = 0;
-    matrix.index_mut(0, 0).i_score = 0;
+    let mut cur = matrix.index_mut(0, 0);
+    cur.s_score = 0;
+    cur.d_score = 0;
+    cur.i_score = 0;
     
     // setup left side
     for i in 1..s1.len()+1 {
@@ -28,22 +31,31 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
 
     // setup top
     for j in 1..s2.len()+1 {
-        matrix.index_mut(0, j).s_score = real_min;
-        matrix.index_mut(0, j).d_score = real_min;
-        matrix.index_mut(0, j).i_score = config.h + config.g * j as i32;
+        cur = matrix.index_mut(0, j);
+        cur.s_score = real_min;
+        cur.d_score = real_min;
+        cur.i_score = config.h + config.g * j as i32;
     }
+    let end = SystemTime::now();
+    let duration_preprocessing = end.duration_since(start).unwrap();
+    let start = SystemTime::now();
 
     // fill in the inside
     let mut s_score: i32;
     let mut d_score: i32;
     let mut i_score: i32;
+    let mut cur_d: &Cell;
+    let mut cur_i: &Cell;
+    let mut cur_s: &Cell;
+    let mut match_score: i32;
     for i in 1..s1.len()+1 {
         for j in 1..s2.len()+1 {
 
             // first handle d_score
-            d_score = matrix.index(i-1, j).d_score + config.g;
-            s_score = matrix.index(i-1, j).s_score + config.h + config.g;
-            i_score = matrix.index(i-1, j).i_score + config.h + config.g;
+            cur_d = matrix.index(i-1, j);
+            d_score = cur_d.d_score + config.g;
+            s_score = cur_d.s_score + config.h + config.g;
+            i_score = cur_d.i_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
                 matrix.index_mut(i, j).d_score = d_score;
             } else if s_score > d_score && s_score > i_score {
@@ -53,9 +65,10 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             }
 
             // then handle i_score
-            i_score = matrix.index(i-1, j).i_score + config.h;
-            d_score = matrix.index(i-1, j).d_score + config.h + config.g;
-            s_score = matrix.index(i-1, j).s_score + config.h + config.g;
+            cur_i = matrix.index(i, j-1);
+            i_score = cur_i.i_score + config.h;
+            d_score = cur_i.d_score + config.h + config.g;
+            s_score = cur_i.s_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
                 matrix.index_mut(i, j).i_score = d_score;
             } else if s_score > d_score && s_score > i_score {
@@ -65,10 +78,11 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             }
 
             // finally handle s_score
-            d_score = matrix.index(i-1, j-1).d_score;
-            i_score = matrix.index(i-1, j-1).i_score;
-            s_score = matrix.index(i-1, j-1).s_score;
-            let match_score = if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() {
+            cur_s = matrix.index(i-1, j-1);
+            d_score = cur_s.d_score;
+            i_score = cur_s.i_score;
+            s_score = cur_s.s_score;
+            match_score = if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() {
                 config.true_match
             } else {
                 config.mismatch
@@ -82,6 +96,9 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             }
         }
     }
+    let end = SystemTime::now();
+    let duration_fill = end.duration_since(start).unwrap();
+    let start = SystemTime::now();
 
     // start the retrace
     let mut s1_str: String = String::with_capacity(s1.len() + s2.len());
@@ -231,6 +248,11 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     println!("Identities = {}/{} ({}%), Gaps = {}/{} ({}%)",
         matches, s1_str.len(), (Into::<f64>::into(matches) / s1_str.len() as f64 * 100.0) as i32,
         gap_extension, s1_str.len(), (Into::<f64>::into(gap_extension) / s1_str.len() as f64 * 100.0) as i32);
+    let end = SystemTime::now();
+    let duration_retrace = end.duration_since(start).unwrap();
+    println!("Time it took to do pre-processing: {:?}", duration_preprocessing);
+    println!("Time it took to fill in the matrix: {:?}", duration_fill);
+    println!("Time it took to print the retrace: {:?}", duration_retrace);
 }
 
 
