@@ -24,9 +24,10 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     
     // setup left side
     for i in 1..s1.len()+1 {
-        matrix.index_mut(i, 0).s_score = real_min;
-        matrix.index_mut(i, 0).d_score = config.h + config.g * i as i32;
-        matrix.index_mut(i, 0).i_score = real_min;
+        cur = matrix.index_mut(i, 0);
+        cur.s_score = real_min;
+        cur.d_score = config.h + config.g * i as i32;
+        cur.i_score = real_min;
     }
 
     // setup top
@@ -128,21 +129,21 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
         };
 
         if up > left && up > diag {
-            s1_str.push(s1.chars().nth(i-1).unwrap());
+            s1_str.push(s1.as_bytes()[i-1] as char);
             s2_str.push('-');
             ma_str.push(' ');
             
             i -= 1;
         } else if left > up && left > diag {
-            s2_str.push(s2.chars().nth(j-1).unwrap());
+            s2_str.push(s2.as_bytes()[j-1] as char);
             s1_str.push('-');
             ma_str.push(' ');
 
             j -= 1;
         } else { //move diagonally
-            s1_str.push(s1.chars().nth(i-1).unwrap());
-            s2_str.push(s2.chars().nth(j-1).unwrap());
-            if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() { //if match
+            s1_str.push(s1.as_bytes()[i-1] as char);
+            s2_str.push(s2.as_bytes()[j-1] as char);
+            if s1.as_bytes()[i-1] == s2.as_bytes()[j-1] { //if match
                 ma_str.push('|');
             } else {
                 ma_str.push(' ');
@@ -269,22 +270,25 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
     let mut matrix: Matrix<Cell> = Matrix::with_shape(s1.len()+1, s2.len()+1);
 
     // setup corner
-    matrix.index_mut(0, 0).s_score = 0;
-    matrix.index_mut(0, 0).d_score = 0;
-    matrix.index_mut(0, 0).i_score = 0;
+    let mut cur = matrix.index_mut(0, 0);
+    cur.s_score = 0;
+    cur.d_score = 0;
+    cur.i_score = 0;
     
     // setup left side
     for i in 1..s1.len()+1 {
-        matrix.index_mut(i, 0).s_score = 0;
-        matrix.index_mut(i, 0).d_score = 0;
-        matrix.index_mut(i, 0).i_score = 0;
+        cur = matrix.index_mut(i, 0);
+        cur.s_score = 0;
+        cur.d_score = 0;
+        cur.i_score = 0;
     }
 
     // setup top
     for j in 1..s2.len()+1 {
-        matrix.index_mut(0, j).s_score = 0;
-        matrix.index_mut(0, j).d_score = 0;
-        matrix.index_mut(0, j).i_score = 0;
+        cur = matrix.index_mut(0, j);
+        cur.s_score = 0;
+        cur.d_score = 0;
+        cur.i_score = 0;
     }
 
     // fill in the inside
@@ -293,13 +297,18 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
     let mut i_score: i32;
     let mut top_i: usize = s1.len();
     let mut top_j: usize = s2.len();
+    let mut cur_d: &Cell;
+    let mut cur_i: &Cell;
+    let mut cur_s: &Cell;
+    let mut match_score: i32;
     for i in 1..s1.len()+1 {
         for j in 1..s2.len()+1 {
 
             // first handle d_score
-            d_score = matrix.index(i-1, j).d_score + config.g;
-            s_score = matrix.index(i-1, j).s_score + config.h + config.g;
-            i_score = matrix.index(i-1, j).i_score + config.h + config.g;
+            cur_d = matrix.index(i-1, j);
+            d_score = cur_d.d_score + config.g;
+            s_score = cur_d.s_score + config.h + config.g;
+            i_score = cur_d.i_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
                 matrix.index_mut(i, j).d_score = d_score;
             } else if s_score > d_score && s_score > i_score {
@@ -309,9 +318,10 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
             }
 
             // then handle i_score
-            i_score = matrix.index(i-1, j).i_score + config.h;
-            d_score = matrix.index(i-1, j).d_score + config.h + config.g;
-            s_score = matrix.index(i-1, j).s_score + config.h + config.g;
+            cur_i = matrix.index(i, j-1);
+            i_score = cur_i.i_score + config.h;
+            d_score = cur_i.d_score + config.h + config.g;
+            s_score = cur_i.s_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
                 matrix.index_mut(i, j).i_score = d_score;
             } else if s_score > d_score && s_score > i_score {
@@ -321,10 +331,11 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
             }
 
             // finally handle s_score
-            d_score = matrix.index(i-1, j-1).d_score;
-            i_score = matrix.index(i-1, j-1).i_score;
-            s_score = matrix.index(i-1, j-1).s_score;
-            let match_score = if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() {
+            cur_s = matrix.index(i-1, j-1);
+            d_score = cur_s.d_score;
+            i_score = cur_s.i_score;
+            s_score = cur_s.s_score;
+            match_score = if s1.as_bytes()[i-1] == s2.as_bytes()[j-1] {
                 config.true_match
             } else {
                 config.mismatch
@@ -338,18 +349,19 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
             }
 
             // fix all negative scores
-            if matrix.index(i, j).d_score < 0 {
-                matrix.index_mut(i, j).d_score = 0;
+            cur = matrix.index_mut(i, j);
+            if cur.d_score < 0 {
+                cur.d_score = 0;
             }
-            if matrix.index(i, j).i_score < 0 {
-                matrix.index_mut(i, j).i_score = 0;
+            if cur.i_score < 0 {
+                cur.i_score = 0;
             }
-            if matrix.index(i, j).s_score < 0 {
-                matrix.index_mut(i, j).s_score = 0;
+            if cur.s_score < 0 {
+                cur.s_score = 0;
             }
 
             // check to see if this cell is the highest scoring
-            if matrix.index(i, j).score() > matrix.index(top_i, top_j).score() {
+            if cur.score() > matrix.index(top_i, top_j).score() {
                 top_i = i;
                 top_j = j;
             }
@@ -368,21 +380,21 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
         let left = matrix.index(i, j-1).score();
         let diag = matrix.index(i-1, j-1).score();
         if up > left && up > diag {
-            s1_str.push(s1.chars().nth(i-1).unwrap());
+            s1_str.push(s1.as_bytes()[i-1] as char);
             s2_str.push('-');
             ma_str.push(' ');
             
             i -= 1;
         } else if left > up && left > diag {
-            s2_str.push(s2.chars().nth(j-1).unwrap());
+            s2_str.push(s2.as_bytes()[j-1] as char);
             s1_str.push('-');
             ma_str.push(' ');
 
             j -= 1;
         } else { //move diagonally
-            s1_str.push(s1.chars().nth(i-1).unwrap());
-            s2_str.push(s2.chars().nth(j-1).unwrap());
-            if s1.chars().nth(i-1).unwrap() == s2.chars().nth(j-1).unwrap() { //if match
+            s1_str.push(s1.as_bytes()[i-1] as char);
+            s2_str.push(s2.as_bytes()[j-1] as char);
+            if s1.as_bytes()[i-1] == s2.as_bytes()[j-1] { //if match
                 ma_str.push('|');
             } else {
                 ma_str.push(' ');
