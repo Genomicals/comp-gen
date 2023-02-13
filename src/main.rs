@@ -55,7 +55,7 @@ fn main() {
     let parameters_file: &str;
     match args.get_one::<String>("CONFIG") { //grab either the provided config or the default
         None => {
-            parameters_file = "parameters.config";
+            parameters_file = "configs/parameters.config";
         },
         Some(file) => {
             parameters_file = &file;

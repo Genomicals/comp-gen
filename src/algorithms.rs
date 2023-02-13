@@ -1,17 +1,9 @@
 use crate::structs::{Config, Cell, Matrix};
-use std::time::SystemTime;
+//use std::time::SystemTime;
 
 /// Implements Needleman-Wunsch for global alignment
 pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
-    //let mut matrix: Vec<Vec<Cell>> = Vec::with_capacity(s1.len() + 1);
-    //for _ in 0..s1.len()+1 {
-    //    let mut lis: Vec<Cell> = Vec::with_capacity(s2.len() + 1);
-    //    for _ in 0..s2.len()+1 {
-    //        lis.push(Cell::new())
-    //    }
-    //    matrix.push(lis); //push the new list of cells to the matrix
-    //}
-    let start = SystemTime::now();
+    //let start = SystemTime::now();
     let mut matrix: Matrix<Cell> = Matrix::with_shape(s1.len()+1, s2.len()+1);
 
     let real_min = std::i32::MIN - config.h - config.g;
@@ -37,9 +29,9 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
         cur.d_score = real_min;
         cur.i_score = config.h + config.g * j as i32;
     }
-    let end = SystemTime::now();
-    let duration_preprocessing = end.duration_since(start).unwrap();
-    let start = SystemTime::now();
+    //let end = SystemTime::now();
+    //let duration_preprocessing = end.duration_since(start).unwrap();
+    //let start = SystemTime::now();
 
     // fill in the inside
     let mut s_score: i32;
@@ -97,9 +89,9 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             }
         }
     }
-    let end = SystemTime::now();
-    let duration_fill = end.duration_since(start).unwrap();
-    let start = SystemTime::now();
+    //let end = SystemTime::now();
+    //let duration_fill = end.duration_since(start).unwrap();
+    //let start = SystemTime::now();
 
     // start the retrace
     let mut s1_str: String = String::with_capacity(s1.len() + s2.len());
@@ -108,21 +100,24 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     let mut i: usize = s1.len();
     let mut j: usize = s2.len();
 
-    println!("lengths of strings: {}, {}", s1.len(), s2.len());
+    //println!("lengths of strings: {}, {}", s1.len(), s2.len());
     //println!("coordinate 0,0: {:?}", matrix[0][0]);
-    
+   
+    let mut up: i32;
+    let mut left: i32;
+    let mut diag: i32;
     while i != 0 || j != 0 {
-        let up = if i > 0 { //if at edge of matrix
+        up = if i > 0 { //if at edge of matrix
             matrix.index(i-1, j).score()
         } else {
             real_min
         };
-        let left = if j > 0 {
+        left = if j > 0 {
             matrix.index(i, j-1).score()
         } else {
             real_min
         };
-        let diag = if i > 0 && j > 0 {
+        diag = if i > 0 && j > 0 {
             matrix.index(i-1, j-1).score()
         } else {
             real_min
@@ -172,6 +167,7 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
 
     let ma_header = " ".repeat(s1_header.len());
 
+    let max_num_len: usize = if s1.len() > s2.len() {s1.len().to_string().len()} else {s2.len().to_string().len()} + 2;
     let mut s1_num_len: usize; //length of the number, for padding reasons
     let mut s2_num_len: usize; //length of the number, for padding reasons
     let mut s1_chunk: &str; //60 chars
@@ -181,6 +177,8 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     let mut s2_counter = 0;
 
     // print the retrace
+    let mut s1_counter_next: usize;
+    let mut s2_counter_next: usize;
     for i in 0..s1_str.len()/60 {
                                               
         s1_chunk = &s1_str[i*60..(i+1)*60]; //the chunk we're printing now
@@ -190,12 +188,12 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
         s1_num_len = (s1_counter+1).to_string().len(); //stringify the current location
         s2_num_len = (s2_counter+1).to_string().len();
         
-        let s1_counter_next = s1_counter + 60 - s1_chunk.matches('-').count(); //calculate the new location
-        let s2_counter_next = s2_counter + 60 - s2_chunk.matches('-').count(); //calculate the new location
+        s1_counter_next = s1_counter + 60 - s1_chunk.matches('-').count(); //calculate the new location
+        s2_counter_next = s2_counter + 60 - s2_chunk.matches('-').count(); //calculate the new location
 
-        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(5-s1_num_len), s1_chunk, s1_counter_next);
-        println!("{}{}{}", ma_header, " ".repeat(5), ma_chunk);
-        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(5-s2_num_len), s2_chunk, s2_counter_next);
+        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(max_num_len-s1_num_len), s1_chunk, s1_counter_next);
+        println!("{}{}{}", ma_header, " ".repeat(max_num_len), ma_chunk);
+        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(max_num_len-s2_num_len), s2_chunk, s2_counter_next);
         println!();
 
         s1_counter = s1_counter_next; //update the current location
@@ -210,9 +208,9 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
         s1_num_len = (s1_counter+1).to_string().len(); //stringify the current location
         s2_num_len = (s2_counter+1).to_string().len();
 
-        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(5-s1_num_len), s1_chunk, s1.len());
-        println!("{}{}{}", ma_header, " ".repeat(5), ma_chunk);
-        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(5-s2_num_len), s2_chunk, s2.len());
+        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(max_num_len-s1_num_len), s1_chunk, s1.len());
+        println!("{}{}{}", ma_header, " ".repeat(max_num_len), ma_chunk);
+        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(max_num_len-s2_num_len), s2_chunk, s2.len());
     }
 
     let mut matches = 0;
@@ -249,24 +247,16 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     println!("Identities = {}/{} ({}%), Gaps = {}/{} ({}%)",
         matches, s1_str.len(), (Into::<f64>::into(matches) / s1_str.len() as f64 * 100.0) as i32,
         gap_extension, s1_str.len(), (Into::<f64>::into(gap_extension) / s1_str.len() as f64 * 100.0) as i32);
-    let end = SystemTime::now();
-    let duration_retrace = end.duration_since(start).unwrap();
-    println!("Time it took to do pre-processing: {:?}", duration_preprocessing);
-    println!("Time it took to fill in the matrix: {:?}", duration_fill);
-    println!("Time it took to print the retrace: {:?}", duration_retrace);
+    //let end = SystemTime::now();
+    //let duration_retrace = end.duration_since(start).unwrap();
+    //println!("Time it took to do pre-processing: {:?}", duration_preprocessing);
+    //println!("Time it took to fill in the matrix: {:?}", duration_fill);
+    //println!("Time it took to print the retrace: {:?}", duration_retrace);
 }
 
 
 /// Implements Smith-Waterman for local alignment
 pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
-    //let mut matrix: Vec<Vec<Cell>> = Vec::with_capacity(s1.len() + 1);
-    //for _ in 0..s1.len()+1 {
-    //    let mut lis: Vec<Cell> = Vec::with_capacity(s2.len() + 1);
-    //    for _ in 0..s2.len()+1 {
-    //        lis.push(Cell::new())
-    //    }
-    //    matrix.push(lis); //push the new list of cells to the matrix
-    //}
     let mut matrix: Matrix<Cell> = Matrix::with_shape(s1.len()+1, s2.len()+1);
 
     // setup corner
@@ -375,10 +365,13 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
     let mut i: usize = top_i;
     let mut j: usize = top_j;
 
+    let mut up: i32;
+    let mut left: i32;
+    let mut diag: i32;
     while matrix.index(i, j).score() != 0 {
-        let up = matrix.index(i-1, j).score();
-        let left = matrix.index(i, j-1).score();
-        let diag = matrix.index(i-1, j-1).score();
+        up = matrix.index(i-1, j).score();
+        left = matrix.index(i, j-1).score();
+        diag = matrix.index(i-1, j-1).score();
         if up > left && up > diag {
             s1_str.push(s1.as_bytes()[i-1] as char);
             s2_str.push('-');
@@ -414,10 +407,11 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
     
     // s1       1    AC
     // string2  2
+    // establish the headers here (the names of the string sequences)
     let mut s1_header = config.s1_name.clone() + "  ";
     let mut s2_header = config.s2_name.clone() + "  ";
 
-    // pad the shorter string
+    // pad the shorter header
     if s1_header.len() > s2_header.len() {
         s2_header += &" ".repeat(s1_header.len() - s2_header.len());
     } else {
@@ -426,6 +420,7 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
 
     let ma_header = " ".repeat(s1_header.len());
 
+    let max_num_len: usize = if s1.len() > s2.len() {s1.len().to_string().len()} else {s2.len().to_string().len()} + 2;
     let mut s1_num_len: usize; //length of the number, for padding reasons
     let mut s2_num_len: usize; //length of the number, for padding reasons
     let mut s1_chunk: &str; //60 chars
@@ -435,6 +430,8 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
     let mut s2_counter = j_0;
     
     // print the retrace
+    let mut s1_counter_next: usize;
+    let mut s2_counter_next: usize;
     for i in 0..s1_str.len()/60 {
                                               
         s1_chunk = &s1_str[i*60..(i+1)*60]; //the chunk we're printing now
@@ -444,12 +441,12 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
         s1_num_len = (s1_counter+1).to_string().len(); //stringify the current location
         s2_num_len = (s2_counter+1).to_string().len();
         
-        let s1_counter_next = s1_counter + 60 - s1_chunk.matches('-').count(); //calculate the new location
-        let s2_counter_next = s2_counter + 60 - s2_chunk.matches('-').count();
+        s1_counter_next = s1_counter + 60 - s1_chunk.matches('-').count(); //calculate the new location
+        s2_counter_next = s2_counter + 60 - s2_chunk.matches('-').count();
 
-        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(5-s1_num_len), s1_chunk, s1_counter_next);
-        println!("{}{}{}", ma_header, " ".repeat(5), ma_chunk);
-        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(5-s2_num_len), s2_chunk, s2_counter_next);
+        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(max_num_len-s1_num_len), s1_chunk, s1_counter_next);
+        println!("{}{}{}", ma_header, " ".repeat(max_num_len), ma_chunk);
+        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(max_num_len-s2_num_len), s2_chunk, s2_counter_next);
         println!();
 
         s1_counter = s1_counter_next; //update the current location
@@ -464,9 +461,9 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
         s1_num_len = (s1_counter+1).to_string().len(); //stringify the current location
         s2_num_len = (s2_counter+1).to_string().len();
 
-        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(5-s1_num_len), s1_chunk, s1_counter+leftover);
-        println!("{}{}{}", ma_header, " ".repeat(5), ma_chunk);
-        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(5-s2_num_len), s2_chunk, s2_counter+leftover);
+        println!("{}{}{}{}  {}", s1_header, s1_counter+1, " ".repeat(max_num_len-s1_num_len), s1_chunk, s1_counter+leftover);
+        println!("{}{}{}", ma_header, " ".repeat(max_num_len), ma_chunk);
+        println!("{}{}{}{}  {}", s2_header, s2_counter+1, " ".repeat(max_num_len-s2_num_len), s2_chunk, s2_counter+leftover);
     }
 
     let mut matches = 0;
