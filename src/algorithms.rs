@@ -34,12 +34,15 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     //let start = SystemTime::now();
 
     // fill in the inside
-    let mut s_score: i32;
     let mut d_score: i32;
+    let mut s_score: i32;
     let mut i_score: i32;
     let mut cur_d: &Cell;
     let mut cur_i: &Cell;
     let mut cur_s: &Cell;
+    let mut new_d_score: i32;
+    let mut new_i_score: i32;
+    let mut new_s_score: i32;
     let mut match_score: i32;
     for i in 1..s1.len()+1 {
         for j in 1..s2.len()+1 {
@@ -50,11 +53,11 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             s_score = cur_d.s_score + config.h + config.g;
             i_score = cur_d.i_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
-                matrix.index_mut(i, j).d_score = d_score;
+                new_d_score = d_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix.index_mut(i, j).d_score = s_score;
+                new_d_score = s_score;
             } else {
-                matrix.index_mut(i, j).d_score = i_score;
+                new_d_score = i_score;
             }
 
             // then handle i_score
@@ -63,11 +66,11 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             d_score = cur_i.d_score + config.h + config.g;
             s_score = cur_i.s_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
-                matrix.index_mut(i, j).i_score = d_score;
+                new_i_score = d_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix.index_mut(i, j).i_score = s_score;
+                new_i_score = s_score;
             } else {
-                matrix.index_mut(i, j).i_score = i_score;
+                new_i_score = i_score;
             }
 
             // finally handle s_score
@@ -81,12 +84,18 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
                 config.mismatch
             };
             if d_score > s_score && d_score > i_score {
-                matrix.index_mut(i, j).s_score = d_score + match_score;
+                new_s_score = d_score + match_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix.index_mut(i, j).s_score = s_score + match_score;
+                new_s_score = s_score + match_score;
             } else {
-                matrix.index_mut(i, j).s_score = i_score + match_score;
+                new_s_score = i_score + match_score;
             }
+
+            // update the cell
+            cur = matrix.index_mut(i, j);
+            cur.d_score = new_d_score;
+            cur.i_score = new_i_score;
+            cur.s_score = new_s_score;
         }
     }
     //let end = SystemTime::now();
@@ -282,14 +291,17 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
     }
 
     // fill in the inside
-    let mut s_score: i32;
     let mut d_score: i32;
+    let mut s_score: i32;
     let mut i_score: i32;
     let mut top_i: usize = s1.len();
     let mut top_j: usize = s2.len();
     let mut cur_d: &Cell;
     let mut cur_i: &Cell;
     let mut cur_s: &Cell;
+    let mut new_d_score: i32;
+    let mut new_i_score: i32;
+    let mut new_s_score: i32;
     let mut match_score: i32;
     for i in 1..s1.len()+1 {
         for j in 1..s2.len()+1 {
@@ -300,11 +312,11 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
             s_score = cur_d.s_score + config.h + config.g;
             i_score = cur_d.i_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
-                matrix.index_mut(i, j).d_score = d_score;
+                new_d_score = d_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix.index_mut(i, j).d_score = s_score;
+                new_d_score = s_score;
             } else {
-                matrix.index_mut(i, j).d_score = i_score;
+                new_d_score = i_score;
             }
 
             // then handle i_score
@@ -313,11 +325,11 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
             d_score = cur_i.d_score + config.h + config.g;
             s_score = cur_i.s_score + config.h + config.g;
             if d_score > s_score && d_score > i_score {
-                matrix.index_mut(i, j).i_score = d_score;
+                new_i_score = d_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix.index_mut(i, j).i_score = s_score;
+                new_i_score = s_score;
             } else {
-                matrix.index_mut(i, j).i_score = i_score;
+                new_i_score = i_score;
             }
 
             // finally handle s_score
@@ -331,23 +343,29 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
                 config.mismatch
             };
             if d_score > s_score && d_score > i_score {
-                matrix.index_mut(i, j).s_score = d_score + match_score;
+                new_s_score = d_score + match_score;
             } else if s_score > d_score && s_score > i_score {
-                matrix.index_mut(i, j).s_score = s_score + match_score;
+                new_s_score = s_score + match_score;
             } else {
-                matrix.index_mut(i, j).s_score = i_score + match_score;
+                new_s_score = i_score + match_score;
             }
 
-            // fix all negative scores
+            // update the cell, fixing all negative scores
             cur = matrix.index_mut(i, j);
-            if cur.d_score < 0 {
+            if new_d_score < 0 { //d score
                 cur.d_score = 0;
+            } else {
+                cur.d_score = new_d_score;
             }
-            if cur.i_score < 0 {
+            if new_i_score < 0 { //i score
                 cur.i_score = 0;
+            } else {
+                cur.i_score = new_i_score;
             }
-            if cur.s_score < 0 {
+            if new_s_score < 0 { //s score
                 cur.s_score = 0;
+            } else {
+                cur.s_score = new_s_score;
             }
 
             // check to see if this cell is the highest scoring
