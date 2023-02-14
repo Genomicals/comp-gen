@@ -34,7 +34,7 @@ fn main() {
             [FILE] "File containing the strings to compare"
         ))
         .arg(arg!(
-            [ALG] "0: global, 1: local"
+            [ALG] "0: Global (Needleman-Wunsch), 1: Local (Smith-Waterman)"
         ))
         .arg(arg!(
             [CONFIG] "Path to custom config file"

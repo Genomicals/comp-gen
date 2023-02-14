@@ -14,12 +14,10 @@ impl<T: Default + Clone> Matrix<T> {
         }
     }
 
-
     /// Returns an immutable reference to item at the given index
     pub fn index(&self, x: usize, y: usize) -> &T {
         &self.matrix[self.y*x+y]
     }
-
 
     /// Returns an immutable reference to item at the given index
     pub fn index_mut(&mut self, x: usize, y: usize) -> &mut T {
