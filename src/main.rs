@@ -83,7 +83,6 @@ fn main() {
             }
         }
     }
-    //println!("Config file: {:?}", config);
     
     // Read the strings file
     let strings_file: &str;

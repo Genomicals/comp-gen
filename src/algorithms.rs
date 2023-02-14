@@ -3,40 +3,36 @@ use crate::structs::{Config, Cell, Matrix};
 
 /// Implements Needleman-Wunsch for global alignment
 pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
-    //let start = SystemTime::now();
     let mut matrix: Matrix<Cell> = Matrix::with_shape(s1.len()+1, s2.len()+1);
 
     let real_min = std::i32::MIN - config.h - config.g;
 
     // setup corner
     let mut cur = matrix.index_mut(0, 0);
-    cur.s_score = 0;
     cur.d_score = 0;
     cur.i_score = 0;
+    cur.s_score = 0;
     
     // setup left side
     for i in 1..s1.len()+1 {
         cur = matrix.index_mut(i, 0);
-        cur.s_score = real_min;
         cur.d_score = config.h + config.g * i as i32;
         cur.i_score = real_min;
+        cur.s_score = real_min;
     }
 
     // setup top
     for j in 1..s2.len()+1 {
         cur = matrix.index_mut(0, j);
-        cur.s_score = real_min;
         cur.d_score = real_min;
         cur.i_score = config.h + config.g * j as i32;
+        cur.s_score = real_min;
     }
-    //let end = SystemTime::now();
-    //let duration_preprocessing = end.duration_since(start).unwrap();
-    //let start = SystemTime::now();
 
     // fill in the inside
     let mut d_score: i32;
-    let mut s_score: i32;
     let mut i_score: i32;
+    let mut s_score: i32;
     let mut cur_d: &Cell;
     let mut cur_i: &Cell;
     let mut cur_s: &Cell;
@@ -50,46 +46,64 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             // first handle d_score
             cur_d = matrix.index(i-1, j);
             d_score = cur_d.d_score + config.g;
-            s_score = cur_d.s_score + config.h + config.g;
             i_score = cur_d.i_score + config.h + config.g;
-            if d_score > s_score && d_score > i_score {
-                new_d_score = d_score;
-            } else if s_score > d_score && s_score > i_score {
-                new_d_score = s_score;
+            s_score = cur_d.s_score + config.h + config.g;
+            new_d_score = if d_score > i_score { //choose max d
+                if d_score > s_score {
+                    d_score
+                } else {
+                    s_score    
+                }
             } else {
-                new_d_score = i_score;
-            }
+                if i_score > s_score {
+                    i_score
+                } else {
+                    s_score
+                }
+            };
 
             // then handle i_score
             cur_i = matrix.index(i, j-1);
-            i_score = cur_i.i_score + config.h;
             d_score = cur_i.d_score + config.h + config.g;
+            i_score = cur_i.i_score + config.g;
             s_score = cur_i.s_score + config.h + config.g;
-            if d_score > s_score && d_score > i_score {
-                new_i_score = d_score;
-            } else if s_score > d_score && s_score > i_score {
-                new_i_score = s_score;
+            new_i_score = if d_score > i_score { //choose max i
+                if d_score > s_score {
+                    d_score
+                } else {
+                    s_score    
+                }
             } else {
-                new_i_score = i_score;
-            }
+                if i_score > s_score {
+                    i_score
+                } else {
+                    s_score
+                }
+            };
 
             // finally handle s_score
             cur_s = matrix.index(i-1, j-1);
             d_score = cur_s.d_score;
             i_score = cur_s.i_score;
             s_score = cur_s.s_score;
-            match_score = if s1.as_bytes()[i-1] == s2.as_bytes()[j-1] {
+            match_score = if s1.as_bytes()[i-1] == s2.as_bytes()[j-1] { //subtract 1 because the matrix is offset by 1
                 config.true_match
             } else {
                 config.mismatch
             };
-            if d_score > s_score && d_score > i_score {
-                new_s_score = d_score + match_score;
-            } else if s_score > d_score && s_score > i_score {
-                new_s_score = s_score + match_score;
+            new_s_score = match_score + if d_score > i_score { //choose max s
+                if d_score > s_score {
+                    d_score
+                } else {
+                    s_score    
+                }
             } else {
-                new_s_score = i_score + match_score;
-            }
+                if i_score > s_score {
+                    i_score
+                } else {
+                    s_score
+                }
+            };
 
             // update the cell
             cur = matrix.index_mut(i, j);
@@ -98,9 +112,6 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
             cur.s_score = new_s_score;
         }
     }
-    //let end = SystemTime::now();
-    //let duration_fill = end.duration_since(start).unwrap();
-    //let start = SystemTime::now();
 
     // start the retrace
     let mut s1_str: String = String::with_capacity(s1.len() + s2.len());
@@ -108,10 +119,6 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     let mut ma_str: String = String::with_capacity(s1.len() + s2.len());
     let mut i: usize = s1.len();
     let mut j: usize = s2.len();
-
-    //println!("lengths of strings: {}, {}", s1.len(), s2.len());
-    //println!("coordinate 0,0: {:?}", matrix[0][0]);
-   
     let mut up: i32;
     let mut left: i32;
     let mut diag: i32;
@@ -176,7 +183,7 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
 
     let ma_header = " ".repeat(s1_header.len());
 
-    let max_num_len: usize = if s1.len() > s2.len() {s1.len().to_string().len()} else {s2.len().to_string().len()} + 2;
+    let max_num_len: usize = 2 + if s1.len() > s2.len() {s1.len().to_string().len()} else {s2.len().to_string().len()};
     let mut s1_num_len: usize; //length of the number, for padding reasons
     let mut s2_num_len: usize; //length of the number, for padding reasons
     let mut s1_chunk: &str; //60 chars
@@ -256,11 +263,6 @@ pub fn needleman_wunsch(s1: &str, s2: &str, config: &Config) {
     println!("Identities = {}/{} ({}%), Gaps = {}/{} ({}%)",
         matches, s1_str.len(), (Into::<f64>::into(matches) / s1_str.len() as f64 * 100.0) as i32,
         gap_extension, s1_str.len(), (Into::<f64>::into(gap_extension) / s1_str.len() as f64 * 100.0) as i32);
-    //let end = SystemTime::now();
-    //let duration_retrace = end.duration_since(start).unwrap();
-    //println!("Time it took to do pre-processing: {:?}", duration_preprocessing);
-    //println!("Time it took to fill in the matrix: {:?}", duration_fill);
-    //println!("Time it took to print the retrace: {:?}", duration_retrace);
 }
 
 
@@ -270,32 +272,30 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
 
     // setup corner
     let mut cur = matrix.index_mut(0, 0);
-    cur.s_score = 0;
     cur.d_score = 0;
     cur.i_score = 0;
+    cur.s_score = 0;
     
     // setup left side
     for i in 1..s1.len()+1 {
         cur = matrix.index_mut(i, 0);
-        cur.s_score = 0;
         cur.d_score = 0;
         cur.i_score = 0;
+        cur.s_score = 0;
     }
 
     // setup top
     for j in 1..s2.len()+1 {
         cur = matrix.index_mut(0, j);
-        cur.s_score = 0;
         cur.d_score = 0;
         cur.i_score = 0;
+        cur.s_score = 0;
     }
 
     // fill in the inside
     let mut d_score: i32;
-    let mut s_score: i32;
     let mut i_score: i32;
-    let mut top_i: usize = s1.len();
-    let mut top_j: usize = s2.len();
+    let mut s_score: i32;
     let mut cur_d: &Cell;
     let mut cur_i: &Cell;
     let mut cur_s: &Cell;
@@ -303,34 +303,49 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
     let mut new_i_score: i32;
     let mut new_s_score: i32;
     let mut match_score: i32;
+    let mut top_i: usize = s1.len();
+    let mut top_j: usize = s2.len();
+    let mut top_score: i32 = 0;
     for i in 1..s1.len()+1 {
         for j in 1..s2.len()+1 {
 
             // first handle d_score
             cur_d = matrix.index(i-1, j);
             d_score = cur_d.d_score + config.g;
-            s_score = cur_d.s_score + config.h + config.g;
             i_score = cur_d.i_score + config.h + config.g;
-            if d_score > s_score && d_score > i_score {
-                new_d_score = d_score;
-            } else if s_score > d_score && s_score > i_score {
-                new_d_score = s_score;
+            s_score = cur_d.s_score + config.h + config.g;
+            new_d_score = if d_score > i_score { //choose max d
+                if d_score > s_score {
+                    d_score
+                } else {
+                    s_score    
+                }
             } else {
-                new_d_score = i_score;
-            }
+                if i_score > s_score {
+                    i_score
+                } else {
+                    s_score
+                }
+            };
 
             // then handle i_score
             cur_i = matrix.index(i, j-1);
-            i_score = cur_i.i_score + config.h;
             d_score = cur_i.d_score + config.h + config.g;
+            i_score = cur_i.i_score + config.g;
             s_score = cur_i.s_score + config.h + config.g;
-            if d_score > s_score && d_score > i_score {
-                new_i_score = d_score;
-            } else if s_score > d_score && s_score > i_score {
-                new_i_score = s_score;
+            new_i_score = if d_score > i_score { //choose max i
+                if d_score > s_score {
+                    d_score
+                } else {
+                    s_score    
+                }
             } else {
-                new_i_score = i_score;
-            }
+                if i_score > s_score {
+                    i_score
+                } else {
+                    s_score
+                }
+            };
 
             // finally handle s_score
             cur_s = matrix.index(i-1, j-1);
@@ -342,13 +357,19 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
             } else {
                 config.mismatch
             };
-            if d_score > s_score && d_score > i_score {
-                new_s_score = d_score + match_score;
-            } else if s_score > d_score && s_score > i_score {
-                new_s_score = s_score + match_score;
+            new_s_score = match_score + if d_score > i_score { //choose max s
+                if d_score > s_score {
+                    d_score
+                } else {
+                    s_score    
+                }
             } else {
-                new_s_score = i_score + match_score;
-            }
+                if i_score > s_score {
+                    i_score
+                } else {
+                    s_score
+                }
+            };
 
             // update the cell, fixing all negative scores
             cur = matrix.index_mut(i, j);
@@ -369,7 +390,8 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
             }
 
             // check to see if this cell is the highest scoring
-            if cur.score() > matrix.index(top_i, top_j).score() {
+            if cur.score() > top_score {
+                top_score = cur.score();
                 top_i = i;
                 top_j = j;
             }
@@ -438,7 +460,7 @@ pub fn smith_waterman(s1: &str, s2: &str, config: &Config) {
 
     let ma_header = " ".repeat(s1_header.len());
 
-    let max_num_len: usize = if s1.len() > s2.len() {s1.len().to_string().len()} else {s2.len().to_string().len()} + 2;
+    let max_num_len: usize = 2 + if s1.len() > s2.len() {s1.len().to_string().len()} else {s2.len().to_string().len()};
     let mut s1_num_len: usize; //length of the number, for padding reasons
     let mut s2_num_len: usize; //length of the number, for padding reasons
     let mut s1_chunk: &str; //60 chars

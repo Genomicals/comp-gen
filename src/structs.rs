@@ -31,16 +31,16 @@ impl<T: Default + Clone> Matrix<T> {
 /// Makes up one cell of a table
 #[derive(Debug, Clone)]
 pub struct Cell {
-    pub s_score: i32,
     pub d_score: i32,
     pub i_score: i32,   
+    pub s_score: i32,
 }
 impl Cell {
     pub fn new() -> Cell {
         Cell {
-            s_score: 0,
             d_score: 0,
             i_score: 0,
+            s_score: 0,
         }
     }
 
