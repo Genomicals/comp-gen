@@ -1,5 +1,5 @@
 # Computational Genomics
-Project repository for our computational genomics course. Uses Needleman-Wunsch for global alignment, and Smith-Waterman for local alignment. Both implement affine gap.
+Project repository for our CptS 471 Computational Genomics course. Uses Needleman-Wunsch for global alignment, and Smith-Waterman for local alignment. Both implement affine gap.
 
 ## Usage
 For information on how to run this program, execute with the -h flag.
