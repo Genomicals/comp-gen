@@ -54,15 +54,35 @@ impl Interface {
         }
     }
 
-    /// Depth-first depth update
-    pub fn DFS(rc: Rc<RefCell<Node>>) {
-        for child in rc.borrow().children.clone() {
-            child.borrow_mut().depth += 1;
-            Node::update_depth_recursive(child);
+    /// Depth-first traversal printing
+    pub fn DFS(&self, rc: Rc<RefCell<Node>>) {
+
+        //print node
+        println!("ID: {:?}, Depth: {:?}, Edge: {:?}",
+            rc.borrow().id,
+            rc.borrow().depth,
+            rc.borrow().get_string(&self.string)
+        );
+
+        //sort the children alphabetically
+        let mut children = rc.borrow().children.clone();
+        children.sort_by(|x, y| { //alphabetically sort the list of children
+            if x.borrow().get_string(&self.string) > y.borrow().get_string(&self.string) {
+                std::cmp::Ordering::Greater
+            } else {
+                std::cmp::Ordering::Less
+            }
+        });
+        
+        for child in children {
+            self.DFS(child);
         }
     }
 
+    
 
+
+    /// Internal function for hopping
     pub fn node_hops(&mut self, string: &str) -> Option<Rc<RefCell<Node>>> {
         Node::node_hops(self.root.clone(), &self.string, string)
     }

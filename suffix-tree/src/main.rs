@@ -32,6 +32,12 @@ fn main() {
     println!("\n\nCHILDREN++++++++++++++++++++++++++++");
     interface.display_children(u.unwrap().clone());
 
+    //print the children of node u
+    println!("\n\nDFS TRAVERSAL++++++++++++++++++++++++++++");
+    interface.DFS(tree.clone());
+
+
+
     
 
     
