@@ -7,8 +7,7 @@ Node:
 */
 
 use std::{rc::Rc, cell::RefCell, thread::current};
-#[derive(Clone)]
-#[derive(Default)]
+#[derive(Clone, Default, PartialEq, Debug)]
 pub struct Node { //string$, suffix_link -> tring$
     parent: Option<Rc<RefCell<Node>>>, //points to immediate parent
     string_index: (usize, usize), //the coordinates of the string this node contains
@@ -31,7 +30,7 @@ impl Node {
     }
 
     pub fn find_path(&mut self, rc: Rc<RefCell<Node>>, string: &str, index: usize) {
-        let current_str = self.get_string(string); //what the current node contains
+        let current_str = String::from(self.get_string(string)); //what the current node contains
         println!("current edge: {:?}",current_str);
         let target_str = String::from(&string[index..]); //the string we want to insert
         println!("edge to insert: {:?}",target_str);
@@ -52,91 +51,64 @@ impl Node {
             println!("no children found that matched first letter of '{:?}'", rest_str);
             //we didn't find a good child, so add a new one
             let mut new_node = Node::new();
-            new_node.parent = Some(rc); //set the parent
+            new_node.parent = Some(rc.clone()); //set the parent
             new_node.string_index = (index + cur_len, string.len()); //set the start index after the current node's index to the end
             println!("creating new node with edge string of: '{:?}'", new_node.get_string(string));
             self.children.push(Rc::new(RefCell::new(new_node)));
-        //branch shares starting character
-        } else {
+
+        } else { //branch shares starting character
             println!("split the current node into '{:?}' and '{:?}", target_str, current_str);
-            let mut i = 0;
-            while current_str.as_bytes()[i] != b'$' && target_str.as_bytes()[i] != b'$' && current_str.as_bytes()[i] == target_str.as_bytes()[i]{
-                println!("{:?}", current_str.as_bytes()[i]);
-                i += 1;
+            let mut split_index = 0;
+            while current_str.as_bytes()[split_index] != b'$' && target_str.as_bytes()[split_index] != b'$' && current_str.as_bytes()[split_index] == target_str.as_bytes()[split_index] {
+                println!("Splits at char: {:?}", current_str.as_bytes()[split_index]);
+                split_index += 1;
             }
 
-            //initialize new internal node
-            let mut new_internal_node = Node::new();
-            new_internal_node.parent = self.parent.clone();
-            //drop(self.parent);
-            let mut new_internal_str = &current_str[0..i];
-            new_internal_node.string_index = (index , index + new_internal_str.len());
-            println!("new internal node edge: {:?}", new_internal_node.get_string(string));
+            //let parent_rc = rc.borrow_mut().parent.clone().unwrap(); //reference to parent
+            let parent_rc = rc.borrow_mut().parent.clone().unwrap(); //reference to parent
+            let index_of_cur_in_parent = parent_rc.borrow().children.clone().iter().position(|x| x.as_ptr() == rc.as_ptr()).unwrap();
 
-            //initialize leaf
-            let mut new_leaf_node = Node::new();
-            new_leaf_node.parent = Some(Rc::new(RefCell::new(new_leaf_node.clone())));
-            new_leaf_node.string_index = (index + i, string.len());
-            println!("new leaf node edge: {:?}", new_leaf_node.get_string(string));
+            //initialize new internal node_____________________________________________________
+            let new_internal_node = Node::new(); //the split
+            let new_internal_rc = Rc::new(RefCell::new(new_internal_node)); //ref to internal_node
+            let new_internal_str = String::from(&current_str[0..split_index]);
+            new_internal_rc.borrow_mut().string_index = (index , index + new_internal_str.len());
 
-            //update current node
-            let s = self.string_index.0;
-            let e = self.string_index.1;
-            drop(self.string_index);
-            self.parent = Some(Rc::new(RefCell::new(new_internal_node.clone())));
-            self.string_index = (s + new_internal_str.len(), e);
+            new_internal_rc.borrow_mut().parent = Some(parent_rc.clone()); //set the split's parent to the current node's parent
+            println!("new internal node edge: {:?}", new_internal_rc.borrow().get_string(string));
+
+            //initialize leaf_____________________________________________________
+            let new_leaf_node = Node::new();
+            let new_leaf_rc = Rc::new(RefCell::new(new_leaf_node)); //ref to leaf_node
+            new_leaf_rc.borrow_mut().parent = Some(new_internal_rc.clone());
+            new_leaf_rc.borrow_mut().string_index = (index + split_index, string.len());
+            println!("new leaf node edge: {:?}", new_leaf_rc.borrow().get_string(string));
+
+            //update internal node parent to current parent_____________________________________________________
+            self.parent = Some(new_internal_rc.clone());
+
+            //update current node edge
+            self.string_index = (self.string_index.0 + new_internal_str.len(), self.string_index.1);
             println!("new current node edge: {:?}", self.get_string(string));
 
             //update the children
-            new_internal_node.children.push(Rc::new(RefCell::new(new_leaf_node)));
-            new_internal_node.children.push(rc);
+            new_internal_rc.borrow_mut().children.push(new_leaf_rc.clone()); //push the new leaf
+            new_internal_rc.borrow_mut().children.push(rc.clone()); //push the current node
 
-            //Endless pit of errors lol wtffff
 
-            // let node: Node = match self.parent {
-            //     Some(rc) => {
-            //         let node_ref = rc.borrow_mut();
-            //         let node_clone = node_ref.clone();
-            //         drop(node_ref); // Release the mutable borrow before returning the Node
-            //         node_clone
-            //     },
-            //     None => {
-            //         Node::default()
-            //     }
-            // };
+            //drop(rc);
+            //drop(new_internal_rc);
+            //drop(new_leaf_rc);
+
+            //update the parent
+            //let rc_pointer = rc.as_ptr();
+            let index_of_cur_in_parent = parent_rc.borrow().children.clone().iter().position(|x| x.as_ptr() == rc.as_ptr()).unwrap();
+            //let index_of_cur_in_parent = parent_rc.try_borrow();
+            //println!("{:?}", index_of_cur_in_parent);
+            parent_rc.borrow_mut().children.remove(index_of_cur_in_parent);
+            parent_rc.borrow_mut().children.push(new_internal_rc);
 
         }
-
-            // let new_internal_node_refCell = Rc::new(RefCell::new(new_internal_node));
-            // let mut new_internal_node_option = Some(new_internal_node_refCell.borrow_mut());
-            // if let Some(rc_node) = new_internal_node_option {
-            //     // Get a reference to the RefCell value
-            //     let ref_cell_node = rc_node.parent.as_ref();
-            //     ref_cell_node = self.parent.as_ref();
-            // }
-            // new_internal_node.parent = Some(self.parent);
-        // we reach here if target doesn't fully contain current string
-        // split the current node
-
-
-        //current: na
-        //target: nana$
-        //rest: na$
-
-        //ROOT
-        //banana$
-        //ana 
-        //  na$
-        //  $
-        //nana$
-
-        //na$
-
-        // if the target string completely contains the current string
-        //      check if a child contains the next letter, if so recurse
-        //      otherwise split and create a new child
-        // else split and create a child
-
     } 
 }
 
