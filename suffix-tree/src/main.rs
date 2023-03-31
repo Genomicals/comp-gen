@@ -16,25 +16,29 @@ use api::Interface;
 
 fn main() {
 
-    let word = "banana";
+    let word = "AATTTTACTTTTAA";
     let mut interface = Interface::new();
-
+      
     let tree = interface.make_tree(word);
 
+    println!("\n\nPRINTTREE++++++++++++++++++++++++++++");
+    Node::print_tree(tree.clone(), &word);
+
     //Get some node u in the tree
-    let u = interface.node_hops("na");
+    let u = interface.node_hops("ACTTTTAA$");
     if let None = u {
         println!("Ran into an error, couldn't find the node!");
-        return;
     }
-
-    //print the children of node u
-    println!("\n\nCHILDREN++++++++++++++++++++++++++++");
-    interface.display_children(u.unwrap().clone());
 
     //print the children of node u
     println!("\n\nDFS TRAVERSAL++++++++++++++++++++++++++++");
     interface.DFS(tree.clone());
+
+    //print the children of node u-
+    println!("\n\nCHILDREN++++++++++++++++++++++++++++");
+    interface.display_children(u.unwrap().clone());
+
+
 
 
 

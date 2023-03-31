@@ -21,6 +21,7 @@ impl Interface {
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
 
         for i in 0..self.string.len() {
+            println!("Next suffix to insert===================: {:?}", &self.string[i..]);
             Node::find_path(self.root.clone(), &self.string, i, &mut config);
         }
 

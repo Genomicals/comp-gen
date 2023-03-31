@@ -58,7 +58,7 @@ impl Node {
 
         for child in rc.borrow().children.clone() {
             Node::print_tree(child, string);
-            println!("Returned to node {:?}", rc.borrow().id);
+            //println!("Returned to node {:?}", rc.borrow().id);
         }
     }
 
@@ -81,9 +81,9 @@ impl Node {
     /// Inserts the given suffix (of 'string' starting at 'index') under the given node
     pub fn find_path(rc: Rc<RefCell<Node>>, string: &str, index: usize, config: &mut TreeConfig) {
         let current_str = String::from(rc.borrow().get_string(string)); //what the current node contains
-        println!("current edge: {:?}",current_str);
+        //println!("current edge^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",current_str);
         let target_str = String::from(&string[index..]); //the string we want to insert
-        println!("edge to insert: {:?}",target_str);
+        //println!("edge to insert^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",target_str);
         if target_str.starts_with(&current_str) { //if the target fully contains the current string
             let mut cur_len: usize = 0;
             let rest_str = String::from(&target_str[current_str.len()..]); //rest of the string after current_str
@@ -94,19 +94,20 @@ impl Node {
                     drop(current_str);
                     drop(target_str);
                     drop(rest_str);
-                    println!("Moving to child with current edge: {:?}", child.borrow().get_string(string));
+                    // println!("Moving to child with current edge: {:?}", child.borrow().get_string(string));
                     Node::find_path(child.clone(), string, index + cur_len, config); //recursion
                     return;
                 } 
             }
-            println!("no children found that matched first letter of {:?}", rest_str);
+            // println!("no children found that matched first letter of {:?}", rest_str);
             //we didn't find a good child, so add a new one
             let mut new_node = Node::new(config);
             new_node.parent = Some(rc.clone()); //set the parent
             new_node.depth = rc.borrow().depth + 1;
             new_node.string_index = (index + cur_len, string.len()); //set the start index after the current node's index to the end
-            println!("creating new node with edge string of: {:?}", new_node.get_string(string));
+            // println!("creating new node with edge string of: {:?}", new_node.get_string(string));
             let new_node_rc = Rc::new(RefCell::new(new_node));
+            rc.borrow_mut().children.push(new_node_rc.clone());
             println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!RESULTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
             println!("Cur edge: {:?}", rc.borrow().get_string(string));
             println!("Cur depth: {:?}", rc.borrow().depth);
@@ -115,13 +116,12 @@ impl Node {
             println!("New depth: {:?}", new_node_rc.borrow().depth);
             println!("New count: {:?}", new_node_rc.borrow().children.len());
             println!("---ENDRESULTS---");
-            rc.borrow_mut().children.push(new_node_rc);
 
         } else { //branch shares starting character
-            println!("split the current node into {:?} and {:?}", target_str, current_str);
+            // println!("split the current node into {:?} and {:?}", target_str, current_str);
             let mut split_index = 0;
             while current_str.as_bytes()[split_index] != b'$' && target_str.as_bytes()[split_index] != b'$' && current_str.as_bytes()[split_index] == target_str.as_bytes()[split_index] {
-                println!("Splits at char: {:?}", current_str.as_bytes()[split_index]);
+                // println!("Splits at char: {:?}", current_str.as_bytes()[split_index]);
                 split_index += 1;
             }
 
@@ -134,7 +134,7 @@ impl Node {
             new_internal_rc.borrow_mut().depth = rc.borrow().depth;
             new_internal_rc.borrow_mut().string_index = (index , index + new_internal_str.len());
             new_internal_rc.borrow_mut().parent = Some(parent_rc.clone()); //set the split's parent to the current node's parent
-            println!("new internal node edge: {:?}", new_internal_rc.borrow().get_string(string));
+            // println!("new internal node edge: {:?}", new_internal_rc.borrow().get_string(string));
 
             //initialize leaf_____________________________________________________
             let new_leaf_node = Node::new(config);
@@ -142,7 +142,7 @@ impl Node {
             new_leaf_rc.borrow_mut().depth = rc.borrow().depth + 1;
             new_leaf_rc.borrow_mut().parent = Some(new_internal_rc.clone());
             new_leaf_rc.borrow_mut().string_index = (index + split_index, string.len());
-            println!("new leaf node edge: {:?}", new_leaf_rc.borrow().get_string(string));
+            // println!("new leaf node edge: {:?}", new_leaf_rc.borrow().get_string(string));
 
             //update internal node parent to current parent_____________________________________________________
             rc.borrow_mut().parent = Some(new_internal_rc.clone());
@@ -151,7 +151,7 @@ impl Node {
             let new_indices = (rc.borrow().string_index.0 + new_internal_str.len(), rc.borrow().string_index.1);
             rc.borrow_mut().string_index = new_indices;
             rc.borrow_mut().depth += 1;
-            println!("new current node edge: {:?}", rc.borrow().get_string(string));
+            // println!("new current node edge: {:?}", rc.borrow().get_string(string));
 
             //update the children
             new_internal_rc.borrow_mut().children.push(new_leaf_rc.clone()); //push the new leaf
@@ -189,10 +189,15 @@ impl Node {
         // remember that if you return a node, wrap it in a Some()
         // if no node is found, return None
         let mut target_string = String::from(alpha);
+        let mut target_dollar = String::from(alpha) + "$";
         'outer: loop {
             println!("Current new substring: {:?}", target_string);
             let rc_children = rc.borrow().children.clone();
             for child in &rc_children {
+                if target_dollar == child.borrow().get_string(string) {
+                    println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(string));
+                    return Some(child.clone()); //found the node we want, return it
+                }
                 if target_string.starts_with(&child.borrow().get_string(string)) { //found viable child
                     if target_string == child.borrow().get_string(string) {
                         println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(string));
@@ -206,12 +211,14 @@ impl Node {
                     );
                     rc = child.clone();
                     target_string = String::from(&target_string[child.borrow().get_string(string).len()..]);
+                    target_dollar = String::from(&target_string) + "$";
                     continue 'outer; //restart the outer loop
                 }
             }
             // will reach here if no node was found with the provided string
-            println!("---No node found");
-            return None;
+            println!("!!!!!!!!!!!!!!!!!!!!!!No node found!!!!!!!!!!!!!!!!!!!");
+            
+            return Some(rc);
         }
     }
 }
