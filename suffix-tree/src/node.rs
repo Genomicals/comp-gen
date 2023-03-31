@@ -29,10 +29,10 @@ impl TreeConfig {
 #[derive(Clone, Default, PartialEq, Debug)]
 pub struct Node { //string$, suffix_link -> tring$
     pub id: usize,
-    parent: Option<Rc<RefCell<Node>>>, //points to immediate parent
-    string_index: (usize, usize), //the coordinates of the string this node contains
-    children: Vec<Rc<RefCell<Node>>>, //children of this node
-    suffix_link: Option<Rc<RefCell<Node>>>, //points to the suffix link
+    pub parent: Option<Rc<RefCell<Node>>>, //points to immediate parent
+    pub string_index: (usize, usize), //the coordinates of the string this node contains
+    pub children: Vec<Rc<RefCell<Node>>>, //children of this node
+    pub suffix_link: Option<Rc<RefCell<Node>>>, //points to the suffix link
     pub depth: u32,
 }
 impl Node {
@@ -189,9 +189,9 @@ impl Node {
         // remember that if you return a node, wrap it in a Some()
         // if no node is found, return None
         let mut target_string = String::from(alpha);
-        let rc_children = rc.borrow().children.clone();
         'outer: loop {
             println!("Current new substring: {:?}", target_string);
+            let rc_children = rc.borrow().children.clone();
             for child in &rc_children {
                 if target_string.starts_with(&child.borrow().get_string(string)) { //found viable child
                     if target_string == child.borrow().get_string(string) {

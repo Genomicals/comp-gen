@@ -4,49 +4,58 @@
 
 //> 
 //>
-//Co-authored-by: Nathan Balcarcel <nbalcarc@users.noreply.github.com>'
+//Co-authored-by: Nathan Balcarcel <nbalcarc@users.noreply.github.com>
 
 mod node;
+mod api;
+
 use std::{rc::Rc, cell::RefCell};
 use node::{Node, TreeConfig};
-
-// fn make_tree() {
-    
-// }
-
+use api::Interface;
 
 
 fn main() {
-    let word = "banana$";
-    let mut config = TreeConfig::new();
-    let root = Node::new(&mut config);
-    let rc_refcell_root = Rc::new(RefCell::new(root));
 
-    for i in 0..word.len() {
+    let word = "banana";
+    let mut interface = Interface::new();
 
-        println!("New current suffix = {:?}_______________________________________", &word[i..]);
-        Node::find_path(rc_refcell_root.clone(), word, i, &mut config);
+    let tree = interface.make_tree(word);
+
+    //Get some node u in the tree
+    let u = interface.node_hops("na");
+    if let None = u {
+        println!("Ran into an error, couldn't find the node!");
+        return;
     }
 
-    Node::print_tree(rc_refcell_root, word);
+    //print the children of node u
+    println!("\n\nCHILDREN++++++++++++++++++++++++++++");
+    interface.display_children(u.unwrap().clone());
 
-    return;
+    
 
-    println!("\n\nDoing hops on all suffixes*****************************************************\n\n");
-    let word2 = "banana$";
-    for i in 0..word2.len() {
-        println!("next Suffix = {:?}_____________________________________", &word2[i..]);
+    
+
+
+    // println!("\n\nDoing tree printing*****************************************************\n\n");
+
+    // Node::print_tree(rc_refcell_root.clone(), word);
+
+    // println!("\n\nDoing hops on all suffixes*****************************************************\n\n");
+    // let word2 = "banana$";
+    // for i in 0..word2.len() {
+    //     println!("next Suffix = {:?}_____________________________________", &word2[i..]);
        
-        let res = Node::node_hops(rc_refcell_root.clone(), word, &word2[i..]);
-        match res {
-            None => println!("Could not find a node"),
-            Some(refer) => println!("Resulting node: {:?}, {:?}, depth {:?}",
-                refer.borrow().id,
-                refer.borrow().get_string(word),
-                refer.borrow().depth,
-            ),
-        }
+    //     let res = Node::node_hops(rc_refcell_root.clone(), word, &word2[i..]);
+    //     match res {
+    //         None => println!("Could not find a node"),
+    //         Some(refer) => println!("Resulting node: {:?}, {:?}, depth {:?}",
+    //             refer.borrow().id,
+    //             refer.borrow().get_string(word),
+    //             refer.borrow().depth,
+    //         ),
+    //     }
 
-    }
+    // }
     
 }
