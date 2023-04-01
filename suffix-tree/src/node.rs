@@ -88,6 +88,7 @@ impl Node {
         ////println!("current edge^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",current_str);
         let target_str = String::from(&string[index..]); //the string we want to insert
         //println!("edge to insert^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",target_str);
+
         if target_str.starts_with(&current_str) { //if the target fully contains the current string
             let cur_len: usize = current_str.len();
             let rest_str = String::from(&target_str[current_str.len()..]); //rest of the string after current_str
@@ -269,16 +270,22 @@ impl Node {
 
     /// Insert the given suffix, provided the previous suffix
     pub fn suffix_link_insert(rc: Rc<RefCell<Node>>, string: &str, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
-        let parent_rc = rc.clone().borrow().parent.clone().unwrap();
+        let parent_rc_maybe = rc.clone().borrow().parent.clone();
+        if let None = parent_rc_maybe {
+            return rc;
+        }
+        let parent_rc = parent_rc_maybe.unwrap();
         let suffix_link_maybe = parent_rc.borrow().suffix_link.clone();
         if let Some(v_rc) = suffix_link_maybe {
             //SL(u) is known
             if parent_rc.borrow().id != 0 {
                 // the parent is not the root, CASE IA
+                println!("Case IA");
                 return Node::find_path(v_rc.clone(), string, index + v_rc.borrow().string_depth, config);
 
             } else {
                 // the parent is the root, CASE IB
+                println!("Case IB");
                 return Node::find_path(v_rc.clone(), string, index, config);
             }
         } else {
@@ -286,15 +293,21 @@ impl Node {
             let grandparent_rc = parent_rc.borrow().parent.clone().unwrap();
             let v_prime_rc_maybe = grandparent_rc.borrow().suffix_link.clone();
             let v_prime_rc = v_prime_rc_maybe.unwrap();
-            if grandparent_rc.borrow().id != 0 {
+            let grandparent_id = grandparent_rc.borrow().id;
+            drop(suffix_link_maybe);
+            if grandparent_id != 0 {
                 // the grandparent is not the root, CASE IIA
+                println!("Case IIA");
                 let v_rc = Node::node_hops(v_prime_rc.clone(), string, &String::from(string)[index + v_prime_rc.borrow().string_depth..]).unwrap();
                 parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
-                return Node::find_path(v_rc.clone(), string, index + grandparent_rc.borrow().string_depth, config);
+                let new_index = index + grandparent_rc.borrow().string_depth;
+                return Node::find_path(v_rc.clone(), string, new_index, config);
 
             } else {
                 // the grandparent is the root, CASE IIB
-                let v_rc = Node::node_hops(v_prime_rc.clone(), string, &String::from(string)[index..]).unwrap();
+                println!("Case IIB");
+                println!("u' and v' ids (should both be 0): {:?}, {:?}", grandparent_rc.borrow().id, v_prime_rc.borrow().id);
+                let v_rc = Node::node_hops(v_prime_rc.clone(), string, &String::from(string)[index-1..]).unwrap();
                 parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
                 return Node::find_path(v_rc.clone(), string, index + parent_rc.borrow().string_depth, config);
             }

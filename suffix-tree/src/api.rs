@@ -4,12 +4,19 @@ use crate::node::{Node, TreeConfig};
 pub struct Interface {
     pub string: String,
     pub root: Rc<RefCell<Node>>,
+    pub config: TreeConfig,
+    pub deepest_node: Rc<RefCell<Node>>,
 }
 impl Interface {
     pub fn new() -> Self {
+        let mut config = TreeConfig::new("");
+        let root = Rc::new(RefCell::new(Node::new(&mut config)));
         Interface {
             string: String::from(""),
-            root: Rc::new(RefCell::new(Node::new(&mut TreeConfig::new("")))),
+            root: root.clone(),
+            config: config,
+            deepest_node: root.clone(),
+
         }
     }
 
@@ -18,10 +25,14 @@ impl Interface {
         self.string = String::from(string) + "$";
         let mut config = TreeConfig::new(&alphabet);
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
+        self.config = config;
 
         for i in 0..self.string.len() {
             //println!("Next suffix to insert===================: {:?}", &self.string[i..]);
-            Node::find_path(self.root.clone(), &self.string, i, &mut config);
+            let node = Node::find_path(self.root.clone(), &self.string, i, &mut self.config);
+            if node.borrow().depth > self.deepest_node.borrow().depth {
+                self.deepest_node = node.clone();
+            }
         }
 
         return self.root.clone();
@@ -31,13 +42,56 @@ impl Interface {
         self.string = String::from(string) + "$";
         let mut config = TreeConfig::new(&alphabet);
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
-        let mut cur = self.root.clone();
+        let self_rc = self.root.clone();
+        //self.root.borrow_mut().parent = Some(Rc::downgrade(&self_rc));
+        self.root.borrow_mut().parent = Some(self_rc.clone());
+        self.root.borrow_mut().suffix_link = Some(self_rc);
+        println!("creating root");
+        let mut cur = Node::find_path(self.root.clone(), string, 0, &mut config);
+        println!("inserted first node");
 
-        for i in 0..self.string.len() {
+        for i in 1..self.string.len() {
+            println!("Next suffix to insert===: {:?}", &self.string[i..]);
             cur = Node::suffix_link_insert(cur.clone(), string, i, &mut config);
+            println!("node added");
         }
 
         return self.root.clone();
+    } 
+
+
+    pub fn get_node_count(&self) -> usize {
+        self.config.next_id
+    }
+
+
+    pub fn get_deepest_node_depth(&self) -> usize {
+        let deepest = self.deepest_node.clone();
+        let parent = deepest.borrow().parent.clone().unwrap();
+        let depth = parent.borrow().string_depth;
+        depth
+    }
+
+    pub fn get_longest_repeat(&self) -> String {
+        let deepest = self.deepest_node.clone();
+        let ret: String = deepest.borrow().parent.clone().unwrap().borrow().get_string(&self.string);
+        ret
+    }
+
+    pub fn average_string_depth(&self) -> usize {
+        let mut totals: Vec<usize> = Vec::new();
+        Interface::average_string_depth_recursive(self.root.clone(), &mut totals);
+        let sum: usize = totals.iter().sum();
+        return sum / totals.len();
+    }
+
+
+    pub fn average_string_depth_recursive(rc: Rc<RefCell<Node>>, totals: &mut Vec<usize>) {
+        totals.push(rc.borrow().string_depth);
+        let children = rc.borrow().children.clone();
+        for child in children {
+            Interface::average_string_depth_recursive(child, totals);
+        }
     }
 
 
@@ -49,14 +103,6 @@ impl Interface {
             println!("No children found!");
             return;
         }
-
-        //children.sort_by(|x, y| { //alphabetically sort the list of children
-        //    if x.borrow().get_string(&self.string) > y.borrow().get_string(&self.string) {
-        //        std::cmp::Ordering::Greater
-        //    } else {
-        //        std::cmp::Ordering::Less
-        //    }
-        //});
         
         for child in &children {
             println!("ID: {:?}, Depth: {:?}, Edge: {:?}",
@@ -98,6 +144,8 @@ impl Interface {
         let s = self.string.as_bytes();
         let mut bwt = String::from("");
         let mut rc: Rc<RefCell<Node>> = self.root.clone();
+
+        //println!("string = {:?}", s);
         
         //traverse the leaves and add them to b vector
         self.add_to_b(rc, &mut leaves);
@@ -112,7 +160,7 @@ impl Interface {
         for i in leaves {
             let index = sorted.iter().position(|&r| r == i).unwrap();
             b.push(index);
-            //println!("pushed {:?} into b", index);
+           // println!("pushed {:?} into b", index);
         }
 
         for i in b {
