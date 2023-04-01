@@ -19,32 +19,34 @@ fn main() {
     let word = "AATTTTACTTTTAA";
     let mut interface = Interface::new();
       
-    let tree = interface.make_tree(word);
+    let tree = interface.make_tree(word, "nana");
 
-    println!("\n\nPRINTTREE++++++++++++++++++++++++++++");
-    interface.print_tree();
+    // println!("\n\nPRINTTREE++++++++++++++++++++++++++++");
+    // interface.print_tree();
 
     //Get some node u in the tree
-    let u = interface.node_hops("ACTTTTAA$");
-    if let None = u {
-        println!("Ran into an error, couldn't find the node!");
-    }
+    let u = interface.node_hops("ACTTTTAA");
+
+    let bwt = interface.BWT_index();
+    println!("BWT = {:?}", bwt);
 
     //print the children of node u
     println!("\n\nDFS TRAVERSAL++++++++++++++++++++++++++++");
     interface.DFS(tree.clone());
 
+
+    println!("\n\nDEBUG PRINT++++++++++++++++++++++++++++");
+    interface.print_tree();
+
+
+    if let None = u {
+        println!("Ran into an error, couldn't find the node!");
+        return;
+    }
+
     //print the children of node u-
     println!("\n\nCHILDREN++++++++++++++++++++++++++++");
     interface.display_children(u.unwrap().clone());
-
-
-
-
-
-    
-
-    
 
 
     // println!("\n\nDoing tree printing*****************************************************\n\n");

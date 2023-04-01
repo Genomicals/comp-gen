@@ -6,17 +6,18 @@ Node:
     string index
 */
 
-use std::{rc::Rc, cell::RefCell, thread::current};
+use std::{rc::Rc, cell::RefCell, collections::HashSet};
 
 
 
 #[derive(Clone, Default, PartialEq, Debug)]
 pub struct TreeConfig {
     pub next_id: usize,
+    pub alphabet: HashSet<char>,
 }
 impl TreeConfig {
-    pub fn new() -> Self {
-        TreeConfig {next_id: 0}
+    pub fn new(alphabet: &str) -> Self {
+        TreeConfig {next_id: 0, alphabet: HashSet::from_iter(String::from(alphabet).chars())}
     }
 
     pub fn next(&mut self) -> usize {
@@ -34,6 +35,7 @@ pub struct Node { //string$, suffix_link -> tring$
     pub children: Vec<Rc<RefCell<Node>>>, //children of this node
     pub suffix_link: Option<Rc<RefCell<Node>>>, //points to the suffix link
     pub depth: u32,
+    pub string_depth: usize,
 }
 impl Node {
     pub fn new(config: &mut TreeConfig) -> Self {
@@ -41,24 +43,26 @@ impl Node {
             id: config.next(),
             parent: None,
             string_index: (0, 0),
-            children: Vec::with_capacity(27), //alphabet + $
+            children: Vec::with_capacity(config.alphabet.len() + 1), //alphabet + $
             suffix_link: None,
-            depth: 0
+            depth: 0,
+            string_depth: 0,
         }
     }
 
 
     /// Depth-first print
     pub fn print_tree(rc: Rc<RefCell<Node>>, string: &str) {
-        println!("Reached node, id: {:?}, depth: {:?}, edge: {:?}",
+        println!("Reached node, id: {:?}, depth: {:?}, string_depth: {:?}, edge: {:?}",
             rc.borrow().id,
             rc.borrow().depth,
+            rc.borrow().string_depth,
             rc.borrow().get_string(string),
         );
 
         for child in rc.borrow().children.clone() {
             Node::print_tree(child, string);
-            //println!("Returned to node {:?}", rc.borrow().id);
+            ////println!("Returned to node {:?}", rc.borrow().id);
         }
     }
 
@@ -79,48 +83,62 @@ impl Node {
 
 
     /// Inserts the given suffix (of 'string' starting at 'index') under the given node
-    pub fn find_path(rc: Rc<RefCell<Node>>, string: &str, index: usize, config: &mut TreeConfig) {
+    pub fn find_path(rc: Rc<RefCell<Node>>, string: &str, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
         let current_str = String::from(rc.borrow().get_string(string)); //what the current node contains
-        //println!("current edge^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",current_str);
+        ////println!("current edge^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",current_str);
         let target_str = String::from(&string[index..]); //the string we want to insert
         //println!("edge to insert^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",target_str);
         if target_str.starts_with(&current_str) { //if the target fully contains the current string
             let cur_len: usize = current_str.len();
             let rest_str = String::from(&target_str[current_str.len()..]); //rest of the string after current_str
+
+            if rest_str.len() == 0 { //we found the node, it already exists
+                return rc;
+            }
+
             let rc_children = rc.borrow().children.clone();
             for child in &rc_children {
                 if child.borrow().get_string(&string).as_bytes()[0] == rest_str.as_bytes()[0] { //found the next child
                     drop(current_str);
                     drop(target_str);
                     drop(rest_str);
-                    println!("Moving to child with current edge: {:?}", child.borrow().get_string(string));
-                    println!("Current index: {}", index);
-                    println!("New index: {}", index + cur_len);
-                    Node::find_path(child.clone(), string, index + cur_len, config); //recursion
-                    return;
+                    // println!("Moving to child with current edge: {:?}", child.borrow().get_string(string));
+                    // println!("Current index: {}", index);
+                    // println!("New index: {}", index + cur_len);
+                    return Node::find_path(child.clone(), string, index + cur_len, config); //recursion
                 } 
             }
             // println!("no children found that matched first letter of {:?}", rest_str);
             //we didn't find a good child, so add a new one
-            println!("!!!!!!!!!!!!!!!!!!!!!!RESULTS-PRE!!!!!");
-            println!("Index: {}", index);
-            println!("New edge: {}", &string[index..]);
-            println!("cur_len: {}", &string[index..]);
+            // println!("!!!!!!!!!!!!!!!!!!!!!!RESULTS-PRE!!!!!");
+            // println!("Index: {}", index);
+            // println!("New edge: {}", &string[index..]);
+            // println!("cur_len: {}", &string[index..]);
             let mut new_node = Node::new(config);
             new_node.parent = Some(rc.clone()); //set the parent
             new_node.depth = rc.borrow().depth + 1;
             new_node.string_index = (index + cur_len, string.len()); //set the start index after the current node's index to the end
+            new_node.string_depth = rc.borrow().string_depth + string.len() - new_node.string_index.0;
             // println!("creating new node with edge string of: {:?}", new_node.get_string(string));
             let new_node_rc = Rc::new(RefCell::new(new_node));
             rc.borrow_mut().children.push(new_node_rc.clone());
-            println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!RESULTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            println!("Cur edge: {:?}", rc.borrow().get_string(string));
-            println!("Cur depth: {:?}", rc.borrow().depth);
-            println!("Cur count: {:?}", rc.borrow().children.len());
-            println!("New edge: {:?}", new_node_rc.borrow().get_string(string));
-            println!("New depth: {:?}", new_node_rc.borrow().depth);
-            println!("New count: {:?}", new_node_rc.borrow().children.len());
-            println!("---ENDRESULTS---");
+            rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
+                if x.borrow().get_string(&string) > y.borrow().get_string(&string) {
+                    std::cmp::Ordering::Greater
+                } else {
+                    std::cmp::Ordering::Less
+                }
+            });
+
+            return new_node_rc;
+            // println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!RESULTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            // println!("Cur edge: {:?}", rc.borrow().get_string(string));
+            // println!("Cur depth: {:?}", rc.borrow().depth);
+            // println!("Cur count: {:?}", rc.borrow().children.len());
+            // println!("New edge: {:?}", new_node_rc.borrow().get_string(string));
+            // println!("New depth: {:?}", new_node_rc.borrow().depth);
+            // println!("New count: {:?}", new_node_rc.borrow().children.len());
+            // println!("---ENDRESULTS---");
 
         } else { //branch shares starting character
             // println!("split the current node into {:?} and {:?}", target_str, current_str);
@@ -138,6 +156,8 @@ impl Node {
             let new_internal_str = String::from(&current_str[0..split_index]);
             new_internal_rc.borrow_mut().depth = rc.borrow().depth;
             new_internal_rc.borrow_mut().string_index = (index , index + new_internal_str.len());
+            let new_depth = parent_rc.borrow().string_depth + new_internal_rc.borrow().string_index.1 - new_internal_rc.borrow().string_index.0; 
+            new_internal_rc.borrow_mut().string_depth = new_depth;
             new_internal_rc.borrow_mut().parent = Some(parent_rc.clone()); //set the split's parent to the current node's parent
             // println!("new internal node edge: {:?}", new_internal_rc.borrow().get_string(string));
 
@@ -147,6 +167,8 @@ impl Node {
             new_leaf_rc.borrow_mut().depth = rc.borrow().depth + 1;
             new_leaf_rc.borrow_mut().parent = Some(new_internal_rc.clone());
             new_leaf_rc.borrow_mut().string_index = (index + split_index, string.len());
+            let new_depth = new_internal_rc.borrow().string_depth + new_leaf_rc.borrow().string_index.1 - new_leaf_rc.borrow().string_index.0;
+            new_leaf_rc.borrow_mut().string_depth = new_depth;
             // println!("new leaf node edge: {:?}", new_leaf_rc.borrow().get_string(string));
 
             //update internal node parent to current parent_____________________________________________________
@@ -161,30 +183,46 @@ impl Node {
             //update the children
             new_internal_rc.borrow_mut().children.push(new_leaf_rc.clone()); //push the new leaf
             new_internal_rc.borrow_mut().children.push(rc.clone()); //push the current node
+            new_internal_rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
+                if x.borrow().get_string(&string) > y.borrow().get_string(&string) {
+                    std::cmp::Ordering::Greater
+                } else {
+                    std::cmp::Ordering::Less
+                }
+            });
             Node::update_depth_recursive(rc.clone());
             Node::update_depth_recursive(new_leaf_rc.clone());
 
             //update the parent
             let index_of_cur_in_parent = parent_rc.borrow().children.clone().iter().position(|x| x.as_ptr() == rc.as_ptr()).unwrap();
-            let mut vec_thingy = parent_rc.borrow().children.clone();
-            vec_thingy.remove(index_of_cur_in_parent);
-            vec_thingy.push(new_internal_rc.clone());
-            parent_rc.borrow_mut().children = vec_thingy;
+            let mut new_parent_children = parent_rc.borrow().children.clone();
+            new_parent_children.remove(index_of_cur_in_parent);
+            new_parent_children.push(new_internal_rc.clone());
+            parent_rc.borrow_mut().children = new_parent_children;
+            parent_rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
+                if x.borrow().get_string(&string) > y.borrow().get_string(&string) {
+                    std::cmp::Ordering::Greater
+                } else {
+                    std::cmp::Ordering::Less
+                }
+            });
 
-            println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!RESULTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-            println!("Parent edge: {:?}", parent_rc.borrow().get_string(string));
-            println!("Parent depth: {:?}", parent_rc.borrow().depth);
-            println!("Parent count: {:?}", parent_rc.borrow().children.len());
-            println!("Internal edge: {:?}", new_internal_rc.borrow().get_string(string));
-            println!("Internal depth: {:?}", new_internal_rc.borrow().depth);
-            println!("Internal count: {:?}", new_internal_rc.borrow().children.len());
-            println!("Cur edge: {:?}", rc.borrow().get_string(string));
-            println!("Cur depth: {:?}", rc.borrow().depth);
-            println!("Cur count: {:?}", rc.borrow().children.len());
-            println!("New edge: {:?}", new_leaf_rc.borrow().get_string(string));
-            println!("New depth: {:?}", new_leaf_rc.borrow().depth);
-            println!("New count: {:?}", new_leaf_rc.borrow().children.len());
-            println!("---ENDRESULTS---");
+            return new_leaf_rc;
+
+            //println!("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!RESULTS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            //println!("Parent edge: {:?}", parent_rc.borrow().get_string(string));
+            //println!("Parent depth: {:?}", parent_rc.borrow().depth);
+            //println!("Parent count: {:?}", parent_rc.borrow().children.len());
+            //println!("Internal edge: {:?}", new_internal_rc.borrow().get_string(string));
+            //println!("Internal depth: {:?}", new_internal_rc.borrow().depth);
+            //println!("Internal count: {:?}", new_internal_rc.borrow().children.len());
+            //println!("Cur edge: {:?}", rc.borrow().get_string(string));
+            //println!("Cur depth: {:?}", rc.borrow().depth);
+            //println!("Cur count: {:?}", rc.borrow().children.len());
+            //println!("New edge: {:?}", new_leaf_rc.borrow().get_string(string));
+            //println!("New depth: {:?}", new_leaf_rc.borrow().depth);
+            //println!("New count: {:?}", new_leaf_rc.borrow().children.len());
+            //println!("---ENDRESULTS---");
         }
     }
 
@@ -196,7 +234,7 @@ impl Node {
         let mut target_string = String::from(alpha);
         let mut target_dollar = String::from(alpha) + "$";
         'outer: loop {
-            println!("Current new substring: {:?}", target_string);
+            //println!("Current new substring: {:?}", target_string);
             let rc_children = rc.borrow().children.clone();
             for child in &rc_children {
                 if target_dollar == child.borrow().get_string(string) {
@@ -209,11 +247,11 @@ impl Node {
                         return Some(child.clone()); //found the node we want, return it
                     }
                     //found a candidate, enter the child
-                    println!("Located good candidate, edge of {:?}, depth {:?}, id {:?}",
-                        child.borrow().get_string(string),
-                        child.borrow().depth,
-                        child.borrow().id,
-                    );
+                    // println!("Located good candidate, edge of {:?}, depth {:?}, id {:?}",
+                    //     child.borrow().get_string(string),
+                    //     child.borrow().depth,
+                    //     child.borrow().id,
+                    // );
                     rc = child.clone();
                     target_string = String::from(&target_string[child.borrow().get_string(string).len()..]);
                     target_dollar = String::from(&target_string) + "$";
@@ -223,9 +261,45 @@ impl Node {
             // will reach here if no node was found with the provided string
             println!("!!!!!!!!!!!!!!!!!!!!!!No node found!!!!!!!!!!!!!!!!!!!");
             
-            return Some(rc);
+            return None;
+            //return Some(rc); --> for testing
         }
     }
+
+
+    /// Insert the given suffix, provided the previous suffix
+    pub fn suffix_link_insert(rc: Rc<RefCell<Node>>, string: &str, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
+        let parent_rc = rc.clone().borrow().parent.clone().unwrap();
+        let suffix_link_maybe = parent_rc.borrow().suffix_link.clone();
+        if let Some(v_rc) = suffix_link_maybe {
+            //SL(u) is known
+            if parent_rc.borrow().id != 0 {
+                // the parent is not the root, CASE IA
+                return Node::find_path(v_rc.clone(), string, index + v_rc.borrow().string_depth, config);
+
+            } else {
+                // the parent is the root, CASE IB
+                return Node::find_path(v_rc.clone(), string, index, config);
+            }
+        } else {
+            //SL(u) is not known
+            let grandparent_rc = parent_rc.borrow().parent.clone().unwrap();
+            let v_prime_rc_maybe = grandparent_rc.borrow().suffix_link.clone();
+            let v_prime_rc = v_prime_rc_maybe.unwrap();
+            if grandparent_rc.borrow().id != 0 {
+                // the grandparent is not the root, CASE IIA
+                let v_rc = Node::node_hops(v_prime_rc.clone(), string, &String::from(string)[index + v_prime_rc.borrow().string_depth..]).unwrap();
+                parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
+                return Node::find_path(v_rc.clone(), string, index + grandparent_rc.borrow().string_depth, config);
+
+            } else {
+                // the grandparent is the root, CASE IIB
+                let v_rc = Node::node_hops(v_prime_rc.clone(), string, &String::from(string)[index..]).unwrap();
+                parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
+                return Node::find_path(v_rc.clone(), string, index + parent_rc.borrow().string_depth, config);
+            }
+        }
+    } 
 }
 
 
