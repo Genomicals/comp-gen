@@ -22,7 +22,7 @@ fn main() {
     let tree = interface.make_tree(word);
 
     println!("\n\nPRINTTREE++++++++++++++++++++++++++++");
-    Node::print_tree(tree.clone(), &word);
+    interface.print_tree();
 
     //Get some node u in the tree
     let u = interface.node_hops("ACTTTTAA$");

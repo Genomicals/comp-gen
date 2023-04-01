@@ -80,7 +80,11 @@ impl Interface {
         }
     }
 
-    
+  
+    /// Prints the tree, for debugging
+    pub fn print_tree(&self) {
+        Node::print_tree(self.root.clone(), &self.string);
+    }
 
 
     /// Internal function for hopping

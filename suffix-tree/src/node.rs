@@ -85,22 +85,27 @@ impl Node {
         let target_str = String::from(&string[index..]); //the string we want to insert
         //println!("edge to insert^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",target_str);
         if target_str.starts_with(&current_str) { //if the target fully contains the current string
-            let mut cur_len: usize = 0;
+            let cur_len: usize = current_str.len();
             let rest_str = String::from(&target_str[current_str.len()..]); //rest of the string after current_str
             let rc_children = rc.borrow().children.clone();
             for child in &rc_children {
                 if child.borrow().get_string(&string).as_bytes()[0] == rest_str.as_bytes()[0] { //found the next child
-                    cur_len = current_str.len(); //reduce memory usage
                     drop(current_str);
                     drop(target_str);
                     drop(rest_str);
-                    // println!("Moving to child with current edge: {:?}", child.borrow().get_string(string));
+                    println!("Moving to child with current edge: {:?}", child.borrow().get_string(string));
+                    println!("Current index: {}", index);
+                    println!("New index: {}", index + cur_len);
                     Node::find_path(child.clone(), string, index + cur_len, config); //recursion
                     return;
                 } 
             }
             // println!("no children found that matched first letter of {:?}", rest_str);
             //we didn't find a good child, so add a new one
+            println!("!!!!!!!!!!!!!!!!!!!!!!RESULTS-PRE!!!!!");
+            println!("Index: {}", index);
+            println!("New edge: {}", &string[index..]);
+            println!("cur_len: {}", &string[index..]);
             let mut new_node = Node::new(config);
             new_node.parent = Some(rc.clone()); //set the parent
             new_node.depth = rc.borrow().depth + 1;
