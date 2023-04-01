@@ -13,11 +13,12 @@ use std::{rc::Rc, cell::RefCell, collections::HashSet};
 #[derive(Clone, Default, PartialEq, Debug)]
 pub struct TreeConfig {
     pub next_id: usize,
+    pub string: String,
     pub alphabet: HashSet<char>,
 }
 impl TreeConfig {
-    pub fn new(alphabet: &str) -> Self {
-        TreeConfig {next_id: 0, alphabet: HashSet::from_iter(String::from(alphabet).chars())}
+    pub fn new(string: &str, alphabet: &str) -> Self {
+        TreeConfig {next_id: 0, string: String::from(string), alphabet: HashSet::from_iter(String::from(alphabet).chars())}
     }
 
     pub fn next(&mut self) -> usize {
@@ -51,17 +52,17 @@ impl Node {
     }
 
 
-    /// Depth-first print
-    pub fn print_tree(rc: Rc<RefCell<Node>>, string: &str) {
+    /// Depth-first print, for debugging
+    pub fn print_tree(rc: Rc<RefCell<Node>>, config: &TreeConfig) {
         println!("Reached node, id: {:?}, depth: {:?}, string_depth: {:?}, edge: {:?}",
             rc.borrow().id,
             rc.borrow().depth,
             rc.borrow().string_depth,
-            rc.borrow().get_string(string),
+            rc.borrow().get_string(config),
         );
 
         for child in rc.borrow().children.clone() {
-            Node::print_tree(child, string);
+            Node::print_tree(child, config);
             ////println!("Returned to node {:?}", rc.borrow().id);
         }
     }
@@ -77,16 +78,16 @@ impl Node {
 
 
     /// Get the string this node contains
-    pub fn get_string(&self, string: &str) -> String {
-        String::from(&string[self.string_index.0..self.string_index.1])
+    pub fn get_string(&self, config: &TreeConfig) -> String {
+        String::from(&config.string[self.string_index.0..self.string_index.1])
     }
 
 
     /// Inserts the given suffix (of 'string' starting at 'index') under the given node
-    pub fn find_path(rc: Rc<RefCell<Node>>, string: &str, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
-        let current_str = String::from(rc.borrow().get_string(string)); //what the current node contains
+    pub fn find_path(rc: Rc<RefCell<Node>>, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
+        let current_str = String::from(rc.borrow().get_string(config)); //what the current node contains
         ////println!("current edge^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",current_str);
-        let target_str = String::from(&string[index..]); //the string we want to insert
+        let target_str = String::from(&config.string[index..]); //the string we want to insert
         //println!("edge to insert^^^^^^^^^^^^^^^^^^^^^^^^^^: {:?}",target_str);
 
         if target_str.starts_with(&current_str) { //if the target fully contains the current string
@@ -99,14 +100,14 @@ impl Node {
 
             let rc_children = rc.borrow().children.clone();
             for child in &rc_children {
-                if child.borrow().get_string(&string).as_bytes()[0] == rest_str.as_bytes()[0] { //found the next child
+                if child.borrow().get_string(config).as_bytes()[0] == rest_str.as_bytes()[0] { //found the next child
                     drop(current_str);
                     drop(target_str);
                     drop(rest_str);
                     // println!("Moving to child with current edge: {:?}", child.borrow().get_string(string));
                     // println!("Current index: {}", index);
                     // println!("New index: {}", index + cur_len);
-                    return Node::find_path(child.clone(), string, index + cur_len, config); //recursion
+                    return Node::find_path(child.clone(), index + cur_len, config); //recursion
                 } 
             }
             // println!("no children found that matched first letter of {:?}", rest_str);
@@ -118,13 +119,13 @@ impl Node {
             let mut new_node = Node::new(config);
             new_node.parent = Some(rc.clone()); //set the parent
             new_node.depth = rc.borrow().depth + 1;
-            new_node.string_index = (index + cur_len, string.len()); //set the start index after the current node's index to the end
-            new_node.string_depth = rc.borrow().string_depth + string.len() - new_node.string_index.0;
+            new_node.string_index = (index + cur_len, config.string.len()); //set the start index after the current node's index to the end
+            new_node.string_depth = rc.borrow().string_depth + config.string.len() - new_node.string_index.0;
             // println!("creating new node with edge string of: {:?}", new_node.get_string(string));
             let new_node_rc = Rc::new(RefCell::new(new_node));
             rc.borrow_mut().children.push(new_node_rc.clone());
             rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
-                if x.borrow().get_string(&string) > y.borrow().get_string(&string) {
+                if x.borrow().get_string(config) > y.borrow().get_string(config) {
                     std::cmp::Ordering::Greater
                 } else {
                     std::cmp::Ordering::Less
@@ -167,7 +168,7 @@ impl Node {
             let new_leaf_rc = Rc::new(RefCell::new(new_leaf_node)); //ref to leaf_node
             new_leaf_rc.borrow_mut().depth = rc.borrow().depth + 1;
             new_leaf_rc.borrow_mut().parent = Some(new_internal_rc.clone());
-            new_leaf_rc.borrow_mut().string_index = (index + split_index, string.len());
+            new_leaf_rc.borrow_mut().string_index = (index + split_index, config.string.len());
             let new_depth = new_internal_rc.borrow().string_depth + new_leaf_rc.borrow().string_index.1 - new_leaf_rc.borrow().string_index.0;
             new_leaf_rc.borrow_mut().string_depth = new_depth;
             // println!("new leaf node edge: {:?}", new_leaf_rc.borrow().get_string(string));
@@ -185,7 +186,7 @@ impl Node {
             new_internal_rc.borrow_mut().children.push(new_leaf_rc.clone()); //push the new leaf
             new_internal_rc.borrow_mut().children.push(rc.clone()); //push the current node
             new_internal_rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
-                if x.borrow().get_string(&string) > y.borrow().get_string(&string) {
+                if x.borrow().get_string(config) > y.borrow().get_string(config) {
                     std::cmp::Ordering::Greater
                 } else {
                     std::cmp::Ordering::Less
@@ -201,7 +202,7 @@ impl Node {
             new_parent_children.push(new_internal_rc.clone());
             parent_rc.borrow_mut().children = new_parent_children;
             parent_rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
-                if x.borrow().get_string(&string) > y.borrow().get_string(&string) {
+                if x.borrow().get_string(config) > y.borrow().get_string(config) {
                     std::cmp::Ordering::Greater
                 } else {
                     std::cmp::Ordering::Less
@@ -229,7 +230,7 @@ impl Node {
 
 
     /// Return the node contaning the given string under the given node
-    pub fn node_hops(mut rc: Rc<RefCell<Node>>, string: &str, alpha: &str) -> Option<Rc<RefCell<Node>>> {
+    pub fn node_hops(mut rc: Rc<RefCell<Node>>, alpha: &str, config: &TreeConfig) -> Option<Rc<RefCell<Node>>> {
         // remember that if you return a node, wrap it in a Some()
         // if no node is found, return None
         let mut target_string = String::from(alpha);
@@ -238,13 +239,13 @@ impl Node {
             //println!("Current new substring: {:?}", target_string);
             let rc_children = rc.borrow().children.clone();
             for child in &rc_children {
-                if target_dollar == child.borrow().get_string(string) {
-                    println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(string));
+                if target_dollar == child.borrow().get_string(config) {
+                    println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                     return Some(child.clone()); //found the node we want, return it
                 }
-                if target_string.starts_with(&child.borrow().get_string(string)) { //found viable child
-                    if target_string == child.borrow().get_string(string) {
-                        println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(string));
+                if target_string.starts_with(&child.borrow().get_string(config)) { //found viable child
+                    if target_string == child.borrow().get_string(config) {
+                        println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                         return Some(child.clone()); //found the node we want, return it
                     }
                     //found a candidate, enter the child
@@ -254,7 +255,7 @@ impl Node {
                     //     child.borrow().id,
                     // );
                     rc = child.clone();
-                    target_string = String::from(&target_string[child.borrow().get_string(string).len()..]);
+                    target_string = String::from(&target_string[child.borrow().get_string(config).len()..]);
                     target_dollar = String::from(&target_string) + "$";
                     continue 'outer; //restart the outer loop
                 }
@@ -269,7 +270,7 @@ impl Node {
 
 
     /// Insert the given suffix, provided the previous suffix
-    pub fn suffix_link_insert(rc: Rc<RefCell<Node>>, string: &str, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
+    pub fn suffix_link_insert(rc: Rc<RefCell<Node>>, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
         let parent_rc_maybe = rc.clone().borrow().parent.clone();
         if let None = parent_rc_maybe {
             return rc;
@@ -281,12 +282,12 @@ impl Node {
             if parent_rc.borrow().id != 0 {
                 // the parent is not the root, CASE IA
                 println!("Case IA");
-                return Node::find_path(v_rc.clone(), string, index + v_rc.borrow().string_depth, config);
+                return Node::find_path(v_rc.clone(), index + v_rc.borrow().string_depth, config);
 
             } else {
                 // the parent is the root, CASE IB
                 println!("Case IB");
-                return Node::find_path(v_rc.clone(), string, index, config);
+                return Node::find_path(v_rc.clone(), index, config);
             }
         } else {
             //SL(u) is not known
@@ -298,18 +299,18 @@ impl Node {
             if grandparent_id != 0 {
                 // the grandparent is not the root, CASE IIA
                 println!("Case IIA");
-                let v_rc = Node::node_hops(v_prime_rc.clone(), string, &String::from(string)[index + v_prime_rc.borrow().string_depth..]).unwrap();
+                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index + v_prime_rc.borrow().string_depth..], config).unwrap();
                 parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
                 let new_index = index + grandparent_rc.borrow().string_depth;
-                return Node::find_path(v_rc.clone(), string, new_index, config);
+                return Node::find_path(v_rc.clone(), new_index, config);
 
             } else {
                 // the grandparent is the root, CASE IIB
                 println!("Case IIB");
                 println!("u' and v' ids (should both be 0): {:?}, {:?}", grandparent_rc.borrow().id, v_prime_rc.borrow().id);
-                let v_rc = Node::node_hops(v_prime_rc.clone(), string, &String::from(string)[index-1..]).unwrap();
+                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index-1..], config).unwrap();
                 parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
-                return Node::find_path(v_rc.clone(), string, index + parent_rc.borrow().string_depth, config);
+                return Node::find_path(v_rc.clone(), index + parent_rc.borrow().string_depth, config);
             }
         }
     } 

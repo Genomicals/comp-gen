@@ -2,17 +2,15 @@ use std::{rc::Rc, cell::RefCell};
 use crate::node::{Node, TreeConfig};
 
 pub struct Interface {
-    pub string: String,
-    pub root: Rc<RefCell<Node>>,
     pub config: TreeConfig,
+    pub root: Rc<RefCell<Node>>,
     pub deepest_node: Rc<RefCell<Node>>,
 }
 impl Interface {
     pub fn new() -> Self {
-        let mut config = TreeConfig::new("");
+        let mut config = TreeConfig::new("", "");
         let root = Rc::new(RefCell::new(Node::new(&mut config)));
         Interface {
-            string: String::from(""),
             root: root.clone(),
             config: config,
             deepest_node: root.clone(),
@@ -22,14 +20,13 @@ impl Interface {
 
     /// Creates a ST with the given string
     pub fn make_tree(&mut self, string: &str, alphabet: &str) -> Rc<RefCell<Node>> {
-        self.string = String::from(string) + "$";
-        let mut config = TreeConfig::new(&alphabet);
+        let mut config = TreeConfig::new(&(String::from(string) + "$"), &alphabet);
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
         self.config = config;
 
-        for i in 0..self.string.len() {
+        for i in 0..self.config.string.len() {
             //println!("Next suffix to insert===================: {:?}", &self.string[i..]);
-            let node = Node::find_path(self.root.clone(), &self.string, i, &mut self.config);
+            let node = Node::find_path(self.root.clone(), i, &mut self.config);
             if node.borrow().depth > self.deepest_node.borrow().depth {
                 self.deepest_node = node.clone();
             }
@@ -39,20 +36,21 @@ impl Interface {
     }
 
     pub fn make_tree_with_links(&mut self, string: &str, alphabet: &str) -> Rc<RefCell<Node>> {
-        self.string = String::from(string) + "$";
-        let mut config = TreeConfig::new(&alphabet);
+        let mut config = TreeConfig::new(&(String::from(string) + "$"), &alphabet);
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
+        self.root = Rc::new(RefCell::new(Node::new(&mut config)));
+        self.config = config;
         let self_rc = self.root.clone();
         //self.root.borrow_mut().parent = Some(Rc::downgrade(&self_rc));
         self.root.borrow_mut().parent = Some(self_rc.clone());
         self.root.borrow_mut().suffix_link = Some(self_rc);
         println!("creating root");
-        let mut cur = Node::find_path(self.root.clone(), string, 0, &mut config);
+        let mut cur = Node::find_path(self.root.clone(), 0, &mut self.config);
         println!("inserted first node");
 
-        for i in 1..self.string.len() {
-            println!("Next suffix to insert===: {:?}", &self.string[i..]);
-            cur = Node::suffix_link_insert(cur.clone(), string, i, &mut config);
+        for i in 1..self.config.string.len() {
+            println!("Next suffix to insert===: {:?}", &self.config.string[i..]);
+            cur = Node::suffix_link_insert(cur.clone(), i, &mut self.config);
             println!("node added");
         }
 
@@ -74,7 +72,7 @@ impl Interface {
 
     pub fn get_longest_repeat(&self) -> String {
         let deepest = self.deepest_node.clone();
-        let ret: String = deepest.borrow().parent.clone().unwrap().borrow().get_string(&self.string);
+        let ret: String = deepest.borrow().parent.clone().unwrap().borrow().get_string(&self.config);
         ret
     }
 
@@ -108,7 +106,7 @@ impl Interface {
             println!("ID: {:?}, Depth: {:?}, Edge: {:?}",
                 child.borrow().id,
                 child.borrow().depth,
-                child.borrow().get_string(&self.string)
+                child.borrow().get_string(&self.config)
             );
         }
     }
@@ -120,7 +118,7 @@ impl Interface {
         println!("ID: {:?}, Depth: {:?}, Edge: {:?}",
             rc.borrow().id,
             rc.borrow().depth,
-            rc.borrow().get_string(&self.string)
+            rc.borrow().get_string(&self.config)
         );
 
         //sort the children alphabetically
@@ -140,8 +138,8 @@ impl Interface {
 
     pub fn BWT_index(&self) -> String {
 
-        let mut leaves: Vec<usize> = Vec::with_capacity(self.string.len());
-        let s = self.string.as_bytes();
+        let mut leaves: Vec<usize> = Vec::with_capacity(self.config.string.len());
+        let s = self.config.string.as_bytes();
         let mut bwt = String::from("");
         let mut rc: Rc<RefCell<Node>> = self.root.clone();
 
@@ -155,7 +153,7 @@ impl Interface {
         sorted.sort();
         //println!("sorted = {:?}", sorted);
 
-        let mut b: Vec<usize> = Vec::with_capacity(self.string.len());
+        let mut b: Vec<usize> = Vec::with_capacity(self.config.string.len());
 
         for i in leaves {
             let index = sorted.iter().position(|&r| r == i).unwrap();
@@ -196,13 +194,13 @@ impl Interface {
   
     /// Prints the tree, for debugging
     pub fn print_tree(&self) {
-        Node::print_tree(self.root.clone(), &self.string);
+        Node::print_tree(self.root.clone(), &self.config);
     }
 
 
     /// Internal function for hopping
     pub fn node_hops(&mut self, string: &str) -> Option<Rc<RefCell<Node>>> {
-        Node::node_hops(self.root.clone(), &self.string, string)
+        Node::node_hops(self.root.clone(), string, &self.config)
     }
 }
 
