@@ -38,10 +38,8 @@ impl Interface {
     pub fn make_tree_with_links(&mut self, string: &str, alphabet: &str) -> Rc<RefCell<Node>> {
         let mut config = TreeConfig::new(&(String::from(string) + "$"), &alphabet);
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
-        self.root = Rc::new(RefCell::new(Node::new(&mut config)));
         self.config = config;
         let self_rc = self.root.clone();
-        //self.root.borrow_mut().parent = Some(Rc::downgrade(&self_rc));
         self.root.borrow_mut().parent = Some(self_rc.clone());
         self.root.borrow_mut().suffix_link = Some(self_rc);
         println!("creating root");

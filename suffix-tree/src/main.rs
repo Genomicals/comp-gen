@@ -78,7 +78,7 @@ fn main() {
 
     let mut interface = Interface::new();
       
-    let tree = interface.make_tree(word, "nana");
+    let tree = interface.make_tree_with_links(word, "nana");
 
     // println!("\n\nPRINTTREE++++++++++++++++++++++++++++");
     // interface.print_tree();

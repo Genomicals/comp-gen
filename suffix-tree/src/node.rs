@@ -282,7 +282,8 @@ impl Node {
             if parent_rc.borrow().id != 0 {
                 // the parent is not the root, CASE IA
                 println!("Case IA");
-                return Node::find_path(v_rc.clone(), index + v_rc.borrow().string_depth, config);
+                let string_depth = v_rc.borrow().string_depth;
+                return Node::find_path(v_rc.clone(), index + string_depth, config);
 
             } else {
                 // the parent is the root, CASE IB
@@ -299,7 +300,10 @@ impl Node {
             if grandparent_id != 0 {
                 // the grandparent is not the root, CASE IIA
                 println!("Case IIA");
-                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index + v_prime_rc.borrow().string_depth..], config).unwrap();
+                //let string_index = v_prime_rc.borrow().string_depth;
+                let string_index = v_prime_rc.borrow().string_depth;
+                println!("string depth: {}", string_index);
+                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index + string_index..], config).unwrap();
                 parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
                 let new_index = index + grandparent_rc.borrow().string_depth;
                 return Node::find_path(v_rc.clone(), new_index, config);
@@ -310,7 +314,8 @@ impl Node {
                 println!("u' and v' ids (should both be 0): {:?}, {:?}", grandparent_rc.borrow().id, v_prime_rc.borrow().id);
                 let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index-1..], config).unwrap();
                 parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
-                return Node::find_path(v_rc.clone(), index + parent_rc.borrow().string_depth, config);
+                let string_depth = parent_rc.borrow().string_depth;
+                return Node::find_path(v_rc.clone(), index + string_depth, config);
             }
         }
     } 
