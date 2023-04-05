@@ -198,7 +198,7 @@ impl Interface {
 
     /// Internal function for hopping
     pub fn node_hops(&mut self, string: &str) -> Option<Rc<RefCell<Node>>> {
-        Node::node_hops(self.root.clone(), string, &self.config)
+        Node::node_hops(self.root.clone(), string, &mut self.config)
     }
 }
 
