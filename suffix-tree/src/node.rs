@@ -295,15 +295,13 @@ impl Node {
                     target_string = String::from(&target_string[child.borrow().get_string(config).len()..]);
                     continue 'outer; //restart the outer loop
                 }
-                //if child.borrow().get_string(config).starts_with(&target_string) { //see if we can split this child to create a valid internal node to return
                 let child_string = child.borrow().get_string(config);
-                if child_string.as_bytes()[0] == target_string.as_bytes()[0] {
+                if child_string.as_bytes()[0] == target_string.as_bytes()[0] { //see if we can split this child to create a valid internal node to return
                     //INSERT INTERNAL NODE
                     println!("INSERTING INTERNAL NODE");
                     
                     let mut split_index = 0;
                     while child_string.as_bytes()[split_index] != b'$' && target_string.as_bytes()[split_index] != b'$' && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
-                        // println!("Splits at char: {:?}", current_str.as_bytes()[split_index]);
                         split_index += 1;
                     }
 
@@ -369,28 +367,23 @@ impl Node {
             let v_prime_rc_maybe = u_prime_rc.borrow().suffix_link.clone();
             let v_prime_rc = v_prime_rc_maybe.unwrap();
             let u_prime_id = u_prime_rc.borrow().id;
-            drop(suffix_link_maybe);
+            let v_rc; //declare variable, will be assigned in if/else block
             if u_prime_id != 0 {
                 // the grandparent is not the root, CASE IIA
                 println!("Case IIA");
                 let v_prime_end = v_prime_rc.borrow().string_index.1; //end of v'
                 let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u
-                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[v_prime_end..(v_prime_end + beta_len)], config).unwrap(); //from end of v' through beta
-                u_rc.borrow_mut().suffix_link = Some(v_rc.clone());
-                let new_index = v_rc.borrow().string_index.1;
-                return Node::find_path(v_rc.clone(), new_index, config); //insert string starting at v's ending index
-
+                v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[v_prime_end..(v_prime_end + beta_len)], config).unwrap(); //from end of v' through beta
             } else {
                 // the grandparent is the root, CASE IIB
                 println!("Case IIB");
                 // v_prime ends at 0, because it's the root
                 let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u, NOTE: beta_prime is one less than beta
-                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index..(index + beta_len)], config).unwrap(); //from end of v' through beta
-                u_rc.borrow_mut().suffix_link = Some(v_rc.clone());
-                let new_index = v_rc.borrow().string_index.1;
-                return Node::find_path(v_rc.clone(), new_index, config); //insert string starting at v's ending index
-
+                v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index..(index + beta_len)], config).unwrap(); //from end of v' through beta
             }
+            u_rc.borrow_mut().suffix_link = Some(v_rc.clone()); //establish link
+            let new_index = v_rc.borrow().string_index.1;
+            return Node::find_path(v_rc.clone(), new_index, config); //insert string starting at v's ending index
         }
     } 
 }
