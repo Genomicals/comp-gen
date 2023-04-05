@@ -74,7 +74,8 @@ fn main() {
     //     }
     // }
 
-    let word = "AATTTTACTTTTAA";
+    //let word = "AATTTTACTTTTAA";
+    let word = "AAAAAAA";
 
     let mut interface = Interface::new();
       

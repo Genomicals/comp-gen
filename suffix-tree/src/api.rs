@@ -44,7 +44,7 @@ impl Interface {
         self.root.borrow_mut().suffix_link = Some(self_rc);
         println!("creating root");
         let mut cur = Node::find_path(self.root.clone(), 0, &mut self.config);
-        println!("inserted first node");
+        println!("inserted first suffix: {:?}", &self.config.string[0..]);
 
         for i in 1..self.config.string.len() {
             println!("Next suffix to insert===: {:?}", &self.config.string[i..]);

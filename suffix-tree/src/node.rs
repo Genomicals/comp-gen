@@ -52,6 +52,17 @@ impl Node {
     }
 
 
+    /// Prints the current node's info
+    pub fn as_string(&self, config: &TreeConfig) -> String {
+        format!("id: {:?}, depth: {:?}, string_depth: {:?}, edge: {:?}",
+            self.id,
+            self.depth,
+            self.string_depth,
+            self.get_string(config),
+        )
+    }
+
+
     /// Depth-first print, for debugging
     pub fn print_tree(rc: Rc<RefCell<Node>>, config: &TreeConfig) {
         println!("Reached node, id: {:?}, depth: {:?}, string_depth: {:?}, edge: {:?}",
@@ -227,19 +238,19 @@ impl Node {
             //println!("---ENDRESULTS---");
         }
     }
-
+    
 
     /// Return the node contaning the given string under the given node
-    pub fn node_hops(mut rc: Rc<RefCell<Node>>, alpha: &str, config: &TreeConfig) -> Option<Rc<RefCell<Node>>> {
-        // remember that if you return a node, wrap it in a Some()
-        // if no node is found, return None
+    pub fn node_hops_pure(mut rc: Rc<RefCell<Node>>, alpha: &str, config: &TreeConfig) -> Option<Rc<RefCell<Node>>> {
+        println!("==> Performing a node hop");
         let mut target_string = String::from(alpha);
-        let mut target_dollar = String::from(alpha) + "$";
         'outer: loop {
-            //println!("Current new substring: {:?}", target_string);
-            let rc_children = rc.borrow().children.clone();
+            println!("Current node: {}", rc.borrow().as_string(config));
+            println!("Finding substring: {:?}", target_string);
+            let rc_children: Vec<Rc<RefCell<Node>>> = rc.borrow().children.clone();
             for child in &rc_children {
-                if target_dollar == child.borrow().get_string(config) {
+                println!("Looking at child: {}", child.borrow().as_string(config));
+                if target_string == child.borrow().get_string(config) {
                     println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                     return Some(child.clone()); //found the node we want, return it
                 }
@@ -249,37 +260,63 @@ impl Node {
                         return Some(child.clone()); //found the node we want, return it
                     }
                     //found a candidate, enter the child
-                    // println!("Located good candidate, edge of {:?}, depth {:?}, id {:?}",
-                    //     child.borrow().get_string(string),
-                    //     child.borrow().depth,
-                    //     child.borrow().id,
-                    // );
                     rc = child.clone();
                     target_string = String::from(&target_string[child.borrow().get_string(config).len()..]);
-                    target_dollar = String::from(&target_string) + "$";
                     continue 'outer; //restart the outer loop
                 }
             }
-            // will reach here if no node was found with the provided string
             println!("!!!!!!!!!!!!!!!!!!!!!!No node found!!!!!!!!!!!!!!!!!!!");
-            
             return None;
-            //return Some(rc); --> for testing
+        }
+    }
+
+
+    /// Return the node contaning the given string under the given node, create an internal node if valid
+    pub fn node_hops(mut rc: Rc<RefCell<Node>>, alpha: &str, config: &TreeConfig) -> Option<Rc<RefCell<Node>>> {
+        println!("==> Performing a node hop");
+        let mut target_string = String::from(alpha);
+        'outer: loop {
+            println!("Current node: {}", rc.borrow().as_string(config));
+            println!("Finding substring: {:?}", target_string);
+            let rc_children: Vec<Rc<RefCell<Node>>> = rc.borrow().children.clone();
+            for child in &rc_children {
+                println!("Looking at child: {}", child.borrow().as_string(config));
+                if target_string == child.borrow().get_string(config) {
+                    println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
+                    return Some(child.clone()); //found the node we want, return it
+                }
+                if target_string.starts_with(&child.borrow().get_string(config)) { //found viable child
+                    if target_string == child.borrow().get_string(config) {
+                        println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
+                        return Some(child.clone()); //found the node we want, return it
+                    }
+                    //found a candidate, enter the child
+                    rc = child.clone();
+                    target_string = String::from(&target_string[child.borrow().get_string(config).len()..]);
+                    continue 'outer; //restart the outer loop
+                }
+                if child.borrow().get_string(config).starts_with(&target_string) { //see if we can split this child to create a valid internal node to return
+                    //INSERT INTERNAL NODE
+
+                }
+            }
+            println!("!!!!!!!!!!!!!!!!!!!!!!No node found!!!!!!!!!!!!!!!!!!!");
+            return None;
         }
     }
 
 
     /// Insert the given suffix, provided the previous suffix
     pub fn suffix_link_insert(rc: Rc<RefCell<Node>>, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
-        let parent_rc_maybe = rc.clone().borrow().parent.clone();
-        if let None = parent_rc_maybe {
+        let u_rc_maybe = rc.clone().borrow().parent.clone();
+        if let None = u_rc_maybe {
             return rc;
         }
-        let parent_rc = parent_rc_maybe.unwrap();
-        let suffix_link_maybe = parent_rc.borrow().suffix_link.clone();
+        let u_rc = u_rc_maybe.unwrap();
+        let suffix_link_maybe = u_rc.borrow().suffix_link.clone();
         if let Some(v_rc) = suffix_link_maybe {
             //SL(u) is known
-            if parent_rc.borrow().id != 0 {
+            if u_rc.borrow().id != 0 {
                 // the parent is not the root, CASE IA
                 println!("Case IA");
                 let string_depth = v_rc.borrow().string_depth;
@@ -292,30 +329,46 @@ impl Node {
             }
         } else {
             //SL(u) is not known
-            let grandparent_rc = parent_rc.borrow().parent.clone().unwrap();
-            let v_prime_rc_maybe = grandparent_rc.borrow().suffix_link.clone();
+            let u_prime_rc = u_rc.borrow().parent.clone().unwrap();
+            let v_prime_rc_maybe = u_prime_rc.borrow().suffix_link.clone();
             let v_prime_rc = v_prime_rc_maybe.unwrap();
-            let grandparent_id = grandparent_rc.borrow().id;
+            let u_prime_id = u_prime_rc.borrow().id;
             drop(suffix_link_maybe);
-            if grandparent_id != 0 {
+            if u_prime_id != 0 {
                 // the grandparent is not the root, CASE IIA
                 println!("Case IIA");
-                //let string_index = v_prime_rc.borrow().string_depth;
-                let string_index = v_prime_rc.borrow().string_depth;
-                println!("string depth: {}", string_index);
-                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index + string_index..], config).unwrap();
-                parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
-                let new_index = index + grandparent_rc.borrow().string_depth;
-                return Node::find_path(v_rc.clone(), new_index, config);
+                //let v_prime_depth = v_prime_rc.borrow().string_depth; //depth of v'
+                //let v_end_index = index + v_prime_depth + beta_len; //end coordinate of node v, v' depth + beta
+                //let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index + v_prime_depth..v_end_index], config).unwrap(); //from end of v' through beta
+                //let new_index = index + v_rc.borrow().string_depth; //start index of the new node we're adding
+
+                let v_prime_end = v_prime_rc.borrow().string_index.1; //end of v'
+                let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u
+                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[v_prime_end..(v_prime_end + beta_len)], config).unwrap(); //from end of v' through beta
+                u_rc.borrow_mut().suffix_link = Some(v_rc.clone());
+                return Node::find_path(v_rc.clone(), v_rc.borrow().string_index.1, config); //insert string starting at v's ending index
 
             } else {
                 // the grandparent is the root, CASE IIB
                 println!("Case IIB");
-                println!("u' and v' ids (should both be 0): {:?}, {:?}", grandparent_rc.borrow().id, v_prime_rc.borrow().id);
-                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index-1..], config).unwrap();
-                parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
-                let string_depth = parent_rc.borrow().string_depth;
-                return Node::find_path(v_rc.clone(), index + string_depth, config);
+                //println!("u' and v' ids (should both be 0): {:?}, {:?}", u_prime_rc.borrow().id, v_prime_rc.borrow().id);
+                //let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index-1..], config).unwrap();
+                //parent_rc.borrow_mut().suffix_link = Some(v_rc.clone());
+                //let string_depth = parent_rc.borrow().string_depth;
+                //return Node::find_path(v_rc.clone(), index + string_depth, config);
+
+                //let v_end_index = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //end coordinate of node v
+                //let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index..index + v_end_index], config).unwrap();
+                //u_rc.borrow_mut().suffix_link = Some(v_rc.clone());
+                //let new_index = index + v_rc.borrow().string_depth; //start index of the new node we're adding
+                //return Node::find_path(v_rc.clone(), new_index, config);
+
+                // v_prime ends at 0, because it's the root
+                let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u, NOTE: beta_prime is one less than beta
+                let v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index..(index + beta_len)], config).unwrap(); //from end of v' through beta
+                u_rc.borrow_mut().suffix_link = Some(v_rc.clone());
+                return Node::find_path(v_rc.clone(), v_rc.borrow().string_index.1, config); //insert string starting at v's ending index
+
             }
         }
     } 
