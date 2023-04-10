@@ -9,7 +9,7 @@
 mod node;
 mod api;
 
-use std::{rc::Rc, cell::RefCell, fs};
+use std::{rc::Rc, cell::RefCell, fs, collections::HashSet};
 use node::{Node, TreeConfig};
 use api::Interface;
 use clap::{arg, command};
@@ -31,55 +31,70 @@ impl NamedString {
 fn main() {
 
 
-    // // Process the arguments with clap
-    // let args: clap::ArgMatches = command!()
-    //     .arg(arg!(
-    //         [FILE] "File containing the string to build the tree for"
-    //     ))
-    //     .arg(arg!(
-    //         [ALPHABET] "File containing the alphabet of the string"
-    //     ))
-    //     .get_matches(); // run clap
+    // collect the input parameters
+    let args: clap::ArgMatches = command!()
+        .arg(arg!(
+            [SEQUENCE] "File containing the sequence to build the tree from."
+        ))
+        .arg(arg!(
+            [ALPHABET] "File containing the alphabet of the sequence."
+        ))
+        .get_matches(); // run clap
 
-    // let string_file: String;
-    // let alphabet_file: String;
-    // match args.get_one::<String>("FILE") { //grab the input str
-    //     None => {
-    //         panic!("Missing required command-line option: FILE");
-    //     },
-    //     Some(file) => {
-    //         string_file = file.clone();
-    //     }
-    // }
-    // match args.get_one::<String>("ALPHABET") { //grab the alphabet
-    //     None => {
-    //         panic!("Missing required command-line option: ALPHABET");
-    //     },
-    //     Some(file) => {
-    //         alphabet_file = file.clone();
-    //     }
-    // }
+    let sequence_file: String;
+    let alphabet_file: String;
+    match args.get_one::<String>("SEQUENCE") { //grab the input sequence
+        None => {
+            panic!("Missing required command-line option: SEQUENCE");
+        },
+        Some(file) => {
+            sequence_file = file.clone();
+        }
+    }
+    match args.get_one::<String>("ALPHABET") { //grab the alphabet
+        None => {
+            panic!("Missing required command-line option: ALPHABET");
+        },
+        Some(file) => {
+            alphabet_file = file.clone();
+        }
+    }
 
-    // let string_string = fs::read_to_string(string_file).expect("Error reading file");
-    // let alphabet_string = fs::read_to_string(alphabet_file).expect("Error reading file");
+    // read the input files
+    let sequence_raw = fs::read_to_string(sequence_file).expect("Error reading sequence file");
+    let alphabet_raw = fs::read_to_string(alphabet_file).expect("Error reading alphabet file");
+    let sequence_lines = sequence_raw.lines();
 
-    // let string_lines = string_string.lines();
-    // let mut string_vec: Vec<NamedString> = Vec::new();
-    // for line in string_lines {
-    //     if line.starts_with(">") { // skip this line but push a new string
-    //         string_vec.push(NamedString::name(&line[1..line.len()])); //copy from the 1st index to the end
-    //         continue;
-    //     } else {
-    //         string_vec.last_mut().expect("Input strings were in the wrong format").str.push_str(line);
-    //     }
-    // }
+    // parse the input files
+    let mut sequence = String::new();
+    let mut alphabet = HashSet::<char>::new();
+    let mut skipped = false; //whether we've skipped the name of the sequence yet
+    for line in sequence_lines {
+        if line.starts_with(">") { // skip this line but push a new string
+            if skipped {
+                panic!("Bad sequence syntax");
+            } else {
+                skipped = true;
+            }
+        } else {
+            sequence.push_str(line);
+        }
+    }
+    for char in alphabet_raw.chars() {
+        if char == ' ' { //skip spaces
+            continue;
+        } else if char == '\n' || char == '\t' { //break on tabs or newlines
+            break;
+        } else {
+            alphabet.insert(char); //push characters
+        }
+    }
 
-    //let word = "AATTTTACTTTTAA";
-    let word = "AAAAAAA";
 
+    // start generating the suffix tree
     let mut interface = Interface::new();
       
-    let tree = interface.make_tree_with_links(word, "nana");
+    let tree = interface.make_tree_with_links(&sequence, &alphabet);
 
     // println!("\n\nPRINTTREE++++++++++++++++++++++++++++");
     // interface.print_tree();
@@ -88,8 +103,8 @@ fn main() {
 
     println!("\n\n___________________TREE STATISTICS___________________");
     println!("Total nodes in the tree: {:?}", total_nodes);
-    println!("Total leaves in the tree: {:?}", word.len() + 1);
-    println!("Total internal nodes in the tree: {:?}", total_nodes - (word.len() + 1));
+    println!("Total leaves in the tree: {:?}", sequence.len() + 1);
+    println!("Total internal nodes in the tree: {:?}", total_nodes - (sequence.len() + 1));
     println!("Average string depth of an internal node: {:?}", interface.average_string_depth());
     println!("String depth of deepest internal node: {:?}", interface.get_deepest_node_depth());
     println!("Longest exact matching repeat: {:?}", interface.get_longest_repeat());
@@ -99,14 +114,14 @@ fn main() {
     println!("BWT = {:?}", bwt);
 
     //Get some node u in the tree
-    let s = &word[5..];
+    let s = &sequence[5..];
     println!("Finding node: {:?}", s);
     let u = interface.node_hops(s);
     interface.display_children(u.clone().unwrap());
 
 
     //Get some node u in the tree
-    let s = &word[10..];
+    let s = &sequence[10..];
     println!("Finding node: {:?}", s);
     let u = interface.node_hops(s);
     interface.display_children(u.clone().unwrap());

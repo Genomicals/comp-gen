@@ -17,8 +17,8 @@ pub struct TreeConfig {
     pub alphabet: HashSet<char>,
 }
 impl TreeConfig {
-    pub fn new(string: &str, alphabet: &str) -> Self {
-        TreeConfig {next_id: 0, string: String::from(string), alphabet: HashSet::from_iter(String::from(alphabet).chars())}
+    pub fn new(string: &str, alphabet: HashSet<char>) -> Self {
+        TreeConfig {next_id: 0, string: String::from(string), alphabet: alphabet}
     }
 
     pub fn next(&mut self) -> usize {

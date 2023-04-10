@@ -1,4 +1,4 @@
-use std::{rc::Rc, cell::RefCell};
+use std::{rc::Rc, cell::RefCell, collections::HashSet};
 use crate::node::{Node, TreeConfig};
 
 pub struct Interface {
@@ -8,7 +8,7 @@ pub struct Interface {
 }
 impl Interface {
     pub fn new() -> Self {
-        let mut config = TreeConfig::new("", "");
+        let mut config = TreeConfig::new("", HashSet::new());
         let root = Rc::new(RefCell::new(Node::new(&mut config)));
         Interface {
             root: root.clone(),
@@ -19,8 +19,8 @@ impl Interface {
     }
 
     /// Creates a ST with the given string
-    pub fn make_tree(&mut self, string: &str, alphabet: &str) -> Rc<RefCell<Node>> {
-        let mut config = TreeConfig::new(&(String::from(string) + "$"), &alphabet);
+    pub fn make_tree(&mut self, string: &str, alphabet: &HashSet<char>) -> Rc<RefCell<Node>> {
+        let mut config = TreeConfig::new(&(String::from(string) + "$"), alphabet.clone());
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
         self.config = config;
 
@@ -35,8 +35,8 @@ impl Interface {
         return self.root.clone();
     }
 
-    pub fn make_tree_with_links(&mut self, string: &str, alphabet: &str) -> Rc<RefCell<Node>> {
-        let mut config = TreeConfig::new(&(String::from(string) + "$"), &alphabet);
+    pub fn make_tree_with_links(&mut self, string: &str, alphabet: &HashSet<char>) -> Rc<RefCell<Node>> {
+        let mut config = TreeConfig::new(&(String::from(string) + "$"), alphabet.clone());
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
         self.config = config;
         let self_rc = self.root.clone();
