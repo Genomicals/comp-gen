@@ -25,7 +25,7 @@ impl Interface {
         self.config = config;
 
         for i in 0..self.config.string.len() {
-            //println!("Next suffix to insert===================: {:?}", &self.string[i..]);
+            println!("Next suffix to insert===================: {:?}", &self.config.string[i..]);
             let node = Node::find_path(self.root.clone(), i, &mut self.config);
             if node.borrow().depth > self.deepest_node.borrow().depth {
                 self.deepest_node = node.clone();
@@ -39,12 +39,13 @@ impl Interface {
         let mut config = TreeConfig::new(&(String::from(string) + "$"), alphabet.clone());
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
         self.config = config;
+        println!(">>>> Creating tree for {}", &self.config.string);
         let self_rc = self.root.clone();
         self.root.borrow_mut().parent = Some(self_rc.clone());
         self.root.borrow_mut().suffix_link = Some(self_rc);
-        println!("creating root");
+        println!("Inserted root");
         let mut cur = Node::find_path(self.root.clone(), 0, &mut self.config);
-        println!("inserted first suffix: {:?}", &self.config.string[0..]);
+        println!("Inserted first suffix: {:?}", &self.config.string[0..]);
 
         for i in 1..self.config.string.len() {
             println!("Next suffix to insert===: {:?}", &self.config.string[i..]);
