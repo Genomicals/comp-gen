@@ -66,6 +66,7 @@ fn main() {
     let sequence_lines = sequence_raw.lines();
 
     // parse the input files
+    let mut sequence_name: String = String::new();
     let mut sequence = String::new();
     let mut alphabet = HashSet::<char>::new();
     let mut skipped = false; //whether we've skipped the name of the sequence yet
@@ -74,6 +75,7 @@ fn main() {
             if skipped {
                 panic!("Bad sequence syntax");
             } else {
+                sequence_name = String::from(&line[1..]);
                 skipped = true;
             }
         } else {
@@ -93,11 +95,9 @@ fn main() {
 
     // start generating the suffix tree
     let mut interface = Interface::new();
-      
     let tree = interface.make_tree_with_links(&sequence, &alphabet);
 
-    // println!("\n\nPRINTTREE++++++++++++++++++++++++++++");
-    // interface.print_tree();
+
 
     let total_nodes = interface.get_node_count();
 
@@ -105,44 +105,45 @@ fn main() {
     println!("Total nodes in the tree: {:?}", total_nodes);
     println!("Total leaves in the tree: {:?}", sequence.len() + 1);
     println!("Total internal nodes in the tree: {:?}", total_nodes - (sequence.len() + 1));
-    println!("Average string depth of an internal node: {:?}", interface.average_string_depth());
+    //println!("Average string depth of an internal node: {:?}", interface.average_string_depth());
     println!("String depth of deepest internal node: {:?}", interface.get_deepest_node_depth());
+    interface.DFS_metrics(sequence_name);
     println!("Longest exact matching repeat: {:?}", interface.get_longest_repeat());
 
 
-    let bwt = interface.BWT_index();
-    println!("BWT = {:?}", bwt);
+    //let bwt = interface.BWT_index();
+    //println!("BWT = {:?}", bwt);
 
     //Get some node u in the tree
-    let s = &sequence[5..];
-    println!("Finding node: {:?}", s);
-    let u = interface.node_hops(s);
-    interface.display_children(u.clone().unwrap());
+    //let s = &sequence[5..];
+    //println!("Finding node: {:?}", s);
+    //let u = interface.node_hops(s);
+    //interface.display_children(u.clone().unwrap());
 
 
-    //Get some node u in the tree
-    let s = &sequence[10..];
-    println!("Finding node: {:?}", s);
-    let u = interface.node_hops(s);
-    interface.display_children(u.clone().unwrap());
+    ////Get some node u in the tree
+    //let s = &sequence[10..];
+    //println!("Finding node: {:?}", s);
+    //let u = interface.node_hops(s);
+    //interface.display_children(u.clone().unwrap());
 
-    //print the children of node u
-    println!("\n\nDFS TRAVERSAL++++++++++++++++++++++++++++");
-    interface.DFS(tree.clone());
-
-
-    // println!("\n\nDEBUG PRINT++++++++++++++++++++++++++++");
-    // interface.print_tree();
+    ////print the children of node u
+    //println!("\n\nDFS TRAVERSAL++++++++++++++++++++++++++++");
+    //interface.DFS(tree.clone());
 
 
-    if let None = u {
-        println!("Ran into an error, couldn't find the node!");
-        return;
-    }
+    //// println!("\n\nDEBUG PRINT++++++++++++++++++++++++++++");
+    //// interface.print_tree();
 
-    //print the children of node u-
-    println!("\n\nCHILDREN++++++++++++++++++++++++++++");
-    interface.display_children(u.unwrap().clone());
+
+    //if let None = u {
+    //    println!("Ran into an error, couldn't find the node!");
+    //    return;
+    //}
+
+    ////print the children of node u-
+    //println!("\n\nCHILDREN++++++++++++++++++++++++++++");
+    //interface.display_children(u.unwrap().clone());
 
 
     // println!("\n\nDoing tree printing*****************************************************\n\n");

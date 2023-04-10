@@ -69,9 +69,9 @@ impl Node {
 
     // Reconstructs the string above the current node
     pub fn reconstruct_string_separators(rc: Rc<RefCell<Node>>, config: &TreeConfig) -> String {
-        println!("<<-- Visited node: {}", rc.borrow().as_string(config));
+        //println!("<<-- Visited node: {}", rc.borrow().as_string(config));
         let parent = rc.borrow().parent.clone().unwrap();
-        println!("Parent node is: {}", parent.borrow().as_string(config));
+        //println!("Parent node is: {}", parent.borrow().as_string(config));
         if rc.borrow().string_index.1 == 0 {
             return String::new();
         }
@@ -96,7 +96,7 @@ impl Node {
 
     /// Depth-first print, for debugging
     pub fn print_tree(rc: Rc<RefCell<Node>>, config: &TreeConfig) {
-        println!("Reached node, {}", rc.borrow().as_string(config));
+        //println!("Reached node, {}", rc.borrow().as_string(config));
 
         for child in rc.borrow().children.clone() {
             Node::print_tree(child, config);
@@ -122,14 +122,14 @@ impl Node {
 
     /// Inserts the given suffix (of 'string' starting at 'index') under the given node
     pub fn find_path(rc: Rc<RefCell<Node>>, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
-        println!(">>>Inserting new node under node: {}", rc.borrow().as_string(config));
+        //println!(">>>Inserting new node under node: {}", rc.borrow().as_string(config));
         let target_str = String::from(&config.string[index..]); //the string we want to insert
-        println!("String to add = {}", &target_str);
+        //println!("String to add = {}", &target_str);
 
         // want to iterate through all children to find a good candidate
         let rc_children = rc.borrow().children.clone();
         for child in &rc_children {
-            println!("Looking at child: {}", child.borrow().as_string(config));
+            //println!("Looking at child: {}", child.borrow().as_string(config));
             if child.borrow().get_string(config).as_bytes()[0] == target_str.as_bytes()[0] { //found a child to split or recurse to
                 let child_str = child.borrow().get_string(config);
                 let mut split_index = 0;
@@ -190,9 +190,9 @@ impl Node {
                     }
                 });
                 
-                println!("CASE: split the child and created a leaf");
-                println!("Added split node: {}", new_internal_rc.borrow().as_string(config));
-                println!("Added leaf node: {}", new_leaf_rc.borrow().as_string(config));
+                //println!("CASE: split the child and created a leaf");
+                //println!("Added split node: {}", new_internal_rc.borrow().as_string(config));
+                //println!("Added leaf node: {}", new_leaf_rc.borrow().as_string(config));
                 return new_leaf_rc;
             } 
         }
@@ -213,29 +213,29 @@ impl Node {
             }
         });
 
-        println!("CASE: created a leaf");
-        println!("Added leaf node: {}", new_node_rc.borrow().as_string(config));
+        //println!("CASE: created a leaf");
+        //println!("Added leaf node: {}", new_node_rc.borrow().as_string(config));
         return new_node_rc;
     }
     
 
     /// Return the node contaning the given string under the given node
     pub fn node_hops_pure(mut rc: Rc<RefCell<Node>>, alpha: &str, config: &TreeConfig) -> Option<Rc<RefCell<Node>>> {
-        println!("==> Performing a node hop");
+        //println!("==> Performing a node hop");
         let mut target_string = String::from(alpha);
         'outer: loop {
-            println!("Current node: {}", rc.borrow().as_string(config));
-            println!("Finding substring: {:?}", target_string);
+            //println!("Current node: {}", rc.borrow().as_string(config));
+            //println!("Finding substring: {:?}", target_string);
             let rc_children: Vec<Rc<RefCell<Node>>> = rc.borrow().children.clone();
             for child in &rc_children {
-                println!("Looking at child: {}", child.borrow().as_string(config));
+                //println!("Looking at child: {}", child.borrow().as_string(config));
                 if target_string == child.borrow().get_string(config) {
-                    println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
+                    //println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                     return Some(child.clone()); //found the node we want, return it
                 }
                 if target_string.starts_with(&child.borrow().get_string(config)) { //found viable child
                     if target_string == child.borrow().get_string(config) {
-                        println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
+                        //println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                         return Some(child.clone()); //found the node we want, return it
                     }
                     //found a candidate, enter the child
@@ -252,25 +252,25 @@ impl Node {
 
     /// Return the node contaning the given string under the given node, create an internal node if valid
     pub fn node_hops(mut rc: Rc<RefCell<Node>>, alpha: &str, config: &mut TreeConfig) -> Option<Rc<RefCell<Node>>> {
-        println!("==> Performing a node hop");
+        //println!("==> Performing a node hop");
         let mut target_string = String::from(alpha);
         'outer: loop {
-            println!("Current node: {}", rc.borrow().as_string(config));
-            println!("Finding substring: {:?}", target_string);
+            //println!("Current node: {}", rc.borrow().as_string(config));
+            //println!("Finding substring: {:?}", target_string);
             if target_string.len() == 0 {
-                println!("---Found the node, exhausted the string.");
+                //println!("---Found the node, exhausted the string.");
                 return Some(rc.clone());
             }
             let mut rc_children: Vec<Rc<RefCell<Node>>> = rc.borrow().children.clone();
             for child in &mut rc_children {
-                println!("Looking at child: {}", child.borrow().as_string(config));
+                //println!("Looking at child: {}", child.borrow().as_string(config));
                 if target_string == child.borrow().get_string(config) {
-                    println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
+                    //println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                     return Some(child.clone()); //found the node we want, return it
                 }
                 if target_string.starts_with(&child.borrow().get_string(config)) { //found viable child
                     if target_string == child.borrow().get_string(config) {
-                        println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
+                        //println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                         return Some(child.clone()); //found the node we want, return it
                     }
                     //found a candidate, enter the child
@@ -281,9 +281,9 @@ impl Node {
                 let child_string = child.borrow().get_string(config);
                 if child_string.as_bytes()[0] == target_string.as_bytes()[0] { //see if we can split this child to create a valid internal node to return
                     //INSERT INTERNAL NODE
-                    println!("INSERTING INTERNAL NODE");
-                    println!("child children: {}", child.borrow().children.len());
-                    println!("child id: {}", child.borrow().id);
+                    //println!("INSERTING INTERNAL NODE");
+                    //println!("child children: {}", child.borrow().children.len());
+                    //println!("child id: {}", child.borrow().id);
                     
                     let mut split_index = 0;
                     //while child_string.as_bytes()[split_index] != b'$' && target_string.as_bytes()[split_index] != b'$' && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
@@ -319,7 +319,7 @@ impl Node {
                         }
                     });
                     Node::update_depth_recursive(child.clone()); //ensure the children have an increased depth by 1
-                    println!("Added split node: {}", new_internal_rc.borrow().as_string(config));
+                    //println!("Added split node: {}", new_internal_rc.borrow().as_string(config));
                     return Some(new_internal_rc);
                 }
             }
@@ -341,13 +341,13 @@ impl Node {
             //SL(u) is known
             if u_rc.borrow().id != 0 {
                 // the parent is not the root, CASE IA
-                println!("Case IA");
+                //println!("Case IA");
                 let string_depth = v_rc.borrow().string_depth;
                 return Node::find_path(v_rc.clone(), index + string_depth, config);
 
             } else {
                 // the parent is the root, CASE IB
-                println!("Case IB");
+                //println!("Case IB");
                 return Node::find_path(v_rc.clone(), index, config);
             }
         } else {
@@ -359,31 +359,31 @@ impl Node {
             let v_rc; //declare variable, will be assigned in if/else block
             if u_prime_id != 0 {
                 // the grandparent is not the root, CASE IIA
-                println!("Case IIA");
+                //println!("Case IIA");
                 //let v_start = v_prime_rc.borrow().string_index.1; //end of v'
                 let v_start = index + v_prime_rc.borrow().string_depth; //end of v'
                 let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u
-                println!(">> v_start: {}", v_start);
-                println!(">> beta_len: {}", beta_len);
+                //println!(">> v_start: {}", v_start);
+                //println!(">> beta_len: {}", beta_len);
                 v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[v_start..(v_start + beta_len)], config).unwrap(); //from end of v' through beta
             } else {
                 // the grandparent is the root, CASE IIB
-                println!("Case IIB");
+                //println!("Case IIB");
                 // v_prime ends at 0, because it's the root
                 let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u - 1, NOTE: beta_prime is one less than beta
-                println!("beta_len: {}", beta_len);
+                //println!("beta_len: {}", beta_len);
                 v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index..(index + beta_len - 1)], config).unwrap(); //from end of v' through beta
-                println!("v_rc children: {}", v_rc.borrow().children.len());
-                println!("v_rc id: {}", v_rc.borrow().id);
-                println!("v_rc indices: {}, {}", v_rc.borrow().string_index.0, v_rc.borrow().string_index.1);
+                //println!("v_rc children: {}", v_rc.borrow().children.len());
+                //println!("v_rc id: {}", v_rc.borrow().id);
+                //println!("v_rc indices: {}, {}", v_rc.borrow().string_index.0, v_rc.borrow().string_index.1);
             }
-            println!("<< Setting suffix link from {} to {}", u_rc.borrow().as_string(config), v_rc.borrow().as_string(config));
-            println!("Edges: \"{}\" to \"{}\"", Node::reconstruct_string(u_rc.clone(), config), Node::reconstruct_string(v_rc.clone(), config));
-            println!("Edges|: \"{}\" to \"{}\"", Node::reconstruct_string_separators(u_rc.clone(), config), Node::reconstruct_string_separators(v_rc.clone(), config));
+            //println!("<< Setting suffix link from {} to {}", u_rc.borrow().as_string(config), v_rc.borrow().as_string(config));
+            //println!("Edges: \"{}\" to \"{}\"", Node::reconstruct_string(u_rc.clone(), config), Node::reconstruct_string(v_rc.clone(), config));
+            //println!("Edges|: \"{}\" to \"{}\"", Node::reconstruct_string_separators(u_rc.clone(), config), Node::reconstruct_string_separators(v_rc.clone(), config));
             u_rc.borrow_mut().suffix_link = Some(v_rc.clone()); //establish link
-            if Node::reconstruct_string(u_rc.clone(), config)[1..] != Node::reconstruct_string(v_rc.clone(), config) {
-                panic!("bruh");
-            }
+            //if Node::reconstruct_string(u_rc.clone(), config)[1..] != Node::reconstruct_string(v_rc.clone(), config) {
+            //    panic!("bruh");
+            //}
             //let new_index = v_rc.borrow().string_index.1;
             //let new_index = index + rc_len;
             let new_index = rc.borrow().string_index.0; //new index should be the old rc's index

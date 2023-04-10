@@ -1,4 +1,4 @@
-use std::{rc::Rc, cell::RefCell, collections::HashSet};
+use std::{rc::Rc, cell::RefCell, collections::HashSet, fs};
 use crate::node::{Node, TreeConfig};
 
 pub struct Interface {
@@ -39,18 +39,25 @@ impl Interface {
         let mut config = TreeConfig::new(&(String::from(string) + "$"), alphabet.clone());
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
         self.config = config;
-        println!(">>>> Creating tree for {}", &self.config.string);
+        //println!(">>>> Creating tree for {}", &self.config.string);
         let self_rc = self.root.clone();
         self.root.borrow_mut().parent = Some(self_rc.clone());
         self.root.borrow_mut().suffix_link = Some(self_rc);
-        println!("Inserted root");
+        self.deepest_node = self.root.clone();
+        //println!("Inserted root");
         let mut cur = Node::find_path(self.root.clone(), 0, &mut self.config);
-        println!("Inserted first suffix: {:?}", &self.config.string[0..]);
+        //println!("Inserted first suffix: {:?}", &self.config.string[0..]);
 
         for i in 1..self.config.string.len() {
-            println!("Next suffix to insert=== {}: {:?}", i, &self.config.string[i..]);
+            //println!("Next suffix to insert=== {}: {:?}", i, &self.config.string[i..]);
             cur = Node::suffix_link_insert(cur.clone(), i, &mut self.config);
-            println!("node added");
+            //println!("Deepest: {}", self.deepest_node.borrow().depth);
+            //println!("Deepest edge: {}", self.deepest_node.borrow().get_string(&self.config));
+            if cur.borrow().depth > self.deepest_node.borrow().depth {
+                self.deepest_node = cur.clone();
+                //println!("New deepest node depth: {}", self.deepest_node.borrow().depth);
+            }
+            //println!("node added");
         }
 
         return self.root.clone();
@@ -71,7 +78,9 @@ impl Interface {
 
     pub fn get_longest_repeat(&self) -> String {
         let deepest = self.deepest_node.clone();
-        let ret: String = deepest.borrow().parent.clone().unwrap().borrow().get_string(&self.config);
+        let parent = deepest.borrow().parent.clone().unwrap();
+        let ret = Node::reconstruct_string(parent, &self.config);
+        //let ret: String = deepest.borrow().parent.clone().unwrap().borrow().get_string(&self.config);
         ret
     }
 
@@ -110,14 +119,78 @@ impl Interface {
         }
     }
 
+
+    pub fn DFS_metrics(&self, file_name: String) -> String {
+        let mut leaf_vec = Vec::new();
+        let (total_depth, leaves) = Interface::DFS_metrics_recursive(self.root.clone(), 0, &mut leaf_vec);
+
+        let total_nodes = self.get_node_count();
+        let internal_nodes = total_nodes - (self.config.string.len() + 1);
+        let average_depth: f64 = total_depth as f64 / internal_nodes as f64;
+        
+        // first add indices to all the id's
+        let mut indexed_leaves: Vec<(usize, usize)> = Vec::with_capacity(self.config.string.len()); //id, index
+        for i in 0..leaves.len() {
+            indexed_leaves.push((leaves[i], i));
+        }
+        indexed_leaves.sort_unstable();
+
+        // then normalize all the id's
+        let mut revised_indexed_leaves = Vec::with_capacity(self.config.string.len()); //will normalize the id's so they're continuous without gaps
+        for i in 0..indexed_leaves.len() {
+            revised_indexed_leaves.push((i, indexed_leaves[i].1));
+        }
+        revised_indexed_leaves.sort_unstable_by(|left, right| left.1.partial_cmp(&right.1).unwrap()); //sort by index
+
+        // push the indices in the correct order
+        let mut bwt_string = String::with_capacity(self.config.string.len());
+        let mut bwt_string_file = String::with_capacity(self.config.string.len() * 2);
+        let the_str = self.config.string.as_bytes();
+        for i in 0..revised_indexed_leaves.len() {
+            if revised_indexed_leaves[i].0 == 0 {
+                bwt_string.push(the_str[self.config.string.len() - 1] as char);
+                bwt_string_file.push(the_str[self.config.string.len() - 1] as char);
+                bwt_string_file.push('\n');
+            } else {
+                bwt_string.push(the_str[revised_indexed_leaves[i].0 - 1] as char);
+                bwt_string_file.push(the_str[revised_indexed_leaves[i].0 - 1] as char);
+                bwt_string_file.push('\n');
+            }
+        }
+
+        // print
+        println!("Average string depth of an internal node: {:?}", average_depth);
+        let full_file_name = String::from("output/") + &file_name + "_BWT.txt";
+        fs::write(&full_file_name, &bwt_string_file).expect("Unable to write file");
+        //println!("\nBWT = \"{}\"", bwt_string);
+        bwt_string
+    }
+
+
+    /// Depth-first traversal metrics
+    pub fn DFS_metrics_recursive(rc: Rc<RefCell<Node>>, total_depth: usize, leaves: &mut Vec<usize>) -> (usize, &mut Vec<usize>) {
+        let children = rc.borrow().children.clone();
+        let mut new_depth = total_depth + rc.borrow().string_depth;
+        if children.len() == 0 { //collect leaves
+            leaves.push(rc.borrow().id)
+        }
+        for child in children { //collect depths
+            (new_depth, _) = Interface::DFS_metrics_recursive(child, new_depth, leaves);
+        }
+        
+        (new_depth, leaves)
+    }
+
+
     /// Depth-first traversal printing
     pub fn DFS(&self, rc: Rc<RefCell<Node>>) {
 
         //print node
-        println!("ID: {:?}, Depth: {:?}, Edge: {:?}",
+        println!("ID: {:?}, Depth: {:?}, Edge: {:?}, String Depth: {:?}",
             rc.borrow().id,
             rc.borrow().depth,
-            rc.borrow().get_string(&self.config)
+            rc.borrow().get_string(&self.config),
+            rc.borrow().string_depth,
         );
 
         //sort the children alphabetically
