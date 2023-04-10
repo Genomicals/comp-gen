@@ -59,6 +59,8 @@ fn main() {
             alphabet_file = file.clone();
         }
     }
+    let sequence_filename_index = sequence_file.rfind('/').unwrap_or(0);
+    let sequence_filename = String::from(&sequence_file[sequence_filename_index..]);
 
     // read the input files
     let sequence_raw = fs::read_to_string(sequence_file).expect("Error reading sequence file");
@@ -107,7 +109,7 @@ fn main() {
     println!("Total internal nodes in the tree: {:?}", total_nodes - (sequence.len() + 1));
     //println!("Average string depth of an internal node: {:?}", interface.average_string_depth());
     println!("String depth of deepest internal node: {:?}", interface.get_deepest_node_depth());
-    interface.DFS_metrics(sequence_name);
+    interface.DFS_metrics(sequence_filename);
     println!("Longest exact matching repeat: {:?}", interface.get_longest_repeat());
 
 
