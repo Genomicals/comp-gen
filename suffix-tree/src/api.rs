@@ -48,7 +48,7 @@ impl Interface {
         println!("Inserted first suffix: {:?}", &self.config.string[0..]);
 
         for i in 1..self.config.string.len() {
-            println!("Next suffix to insert===: {:?}", &self.config.string[i..]);
+            println!("Next suffix to insert=== {}: {:?}", i, &self.config.string[i..]);
             cur = Node::suffix_link_insert(cur.clone(), i, &mut self.config);
             println!("node added");
         }

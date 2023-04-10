@@ -68,6 +68,21 @@ impl Node {
 
 
     // Reconstructs the string above the current node
+    pub fn reconstruct_string_separators(rc: Rc<RefCell<Node>>, config: &TreeConfig) -> String {
+        println!("<<-- Visited node: {}", rc.borrow().as_string(config));
+        let parent = rc.borrow().parent.clone().unwrap();
+        println!("Parent node is: {}", parent.borrow().as_string(config));
+        if rc.borrow().string_index.1 == 0 {
+            return String::new();
+        }
+        let self_str = String::from(rc.borrow().get_string(config));
+        let parent_rc = rc.borrow().parent.clone().unwrap();
+        let parent_result = Node::reconstruct_string_separators(parent_rc, config);
+        parent_result + "|" + &self_str
+    }
+
+
+    // Reconstructs the string above the current node
     pub fn reconstruct_string(rc: Rc<RefCell<Node>>, config: &TreeConfig) -> String {
         if rc.borrow().string_index.1 == 0 {
             return String::new();
@@ -75,7 +90,7 @@ impl Node {
         let self_str = String::from(rc.borrow().get_string(config));
         let parent_rc = rc.borrow().parent.clone().unwrap();
         let parent_result = Node::reconstruct_string(parent_rc, config);
-        self_str + "|" + &parent_result
+        parent_result + &self_str
     }
 
 
@@ -114,6 +129,7 @@ impl Node {
         // want to iterate through all children to find a good candidate
         let rc_children = rc.borrow().children.clone();
         for child in &rc_children {
+            println!("Looking at child: {}", child.borrow().as_string(config));
             if child.borrow().get_string(config).as_bytes()[0] == target_str.as_bytes()[0] { //found a child to split or recurse to
                 let child_str = child.borrow().get_string(config);
                 let mut split_index = 0;
@@ -140,6 +156,7 @@ impl Node {
                 let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
                 child.borrow_mut().string_index = new_indices;
                 child.borrow_mut().depth += 1;
+                child.borrow_mut().parent = Some(new_internal_rc.clone());
 
                 // remove child from rc's children and push the new internal node
                 let index_of_child_in_rc = rc.borrow().children.clone().iter().position(|x| x.as_ptr() == child.as_ptr()).unwrap();
@@ -286,6 +303,7 @@ impl Node {
                     let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
                     child.borrow_mut().string_index = new_indices;
                     child.borrow_mut().depth += 1;
+                    child.borrow_mut().parent = Some(new_internal_rc.clone());
 
                     // remove child from rc's children and push the new internal node
                     let index_of_child_in_rc = rc.borrow().children.clone().iter().position(|x| x.as_ptr() == child.as_ptr()).unwrap();
@@ -342,11 +360,12 @@ impl Node {
             if u_prime_id != 0 {
                 // the grandparent is not the root, CASE IIA
                 println!("Case IIA");
-                let v_prime_end = v_prime_rc.borrow().string_index.1; //end of v'
+                //let v_start = v_prime_rc.borrow().string_index.1; //end of v'
+                let v_start = index + v_prime_rc.borrow().string_depth; //end of v'
                 let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u
-                println!(">> v_prime_end: {}", v_prime_end);
+                println!(">> v_start: {}", v_start);
                 println!(">> beta_len: {}", beta_len);
-                v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[v_prime_end..(v_prime_end + beta_len)], config).unwrap(); //from end of v' through beta
+                v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[v_start..(v_start + beta_len)], config).unwrap(); //from end of v' through beta
             } else {
                 // the grandparent is the root, CASE IIB
                 println!("Case IIB");
@@ -358,8 +377,11 @@ impl Node {
                 println!("v_rc id: {}", v_rc.borrow().id);
                 println!("v_rc indices: {}, {}", v_rc.borrow().string_index.0, v_rc.borrow().string_index.1);
             }
+            println!("<< Setting suffix link from {} to {}", u_rc.borrow().as_string(config), v_rc.borrow().as_string(config));
+            println!("Edges: \"{}\" to \"{}\"", Node::reconstruct_string(u_rc.clone(), config), Node::reconstruct_string(v_rc.clone(), config));
+            println!("Edges|: \"{}\" to \"{}\"", Node::reconstruct_string_separators(u_rc.clone(), config), Node::reconstruct_string_separators(v_rc.clone(), config));
             u_rc.borrow_mut().suffix_link = Some(v_rc.clone()); //establish link
-            if u_rc.borrow().get_string(config)[1..] != v_rc.borrow().get_string(config) {
+            if Node::reconstruct_string(u_rc.clone(), config)[1..] != Node::reconstruct_string(v_rc.clone(), config) {
                 panic!("bruh");
             }
             //let new_index = v_rc.borrow().string_index.1;
