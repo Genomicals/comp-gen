@@ -108,9 +108,10 @@ fn main() {
     println!("Total leaves in the tree: {:?}", sequence.len() + 1);
     println!("Total internal nodes in the tree: {:?}", total_nodes - (sequence.len() + 1));
     //println!("Average string depth of an internal node: {:?}", interface.average_string_depth());
-    println!("String depth of deepest internal node: {:?}", interface.get_deepest_node_depth());
+    //println!("String depth of deepest internal node: {:?}", interface.get_deepest_node_string_depth());
+    //println!("Depth of deepest internal node: {:?}", interface.get_deepest_node_depth());
+    //println!("Longest exact matching repeat: {:?}", interface.get_longest_repeat());
     interface.DFS_metrics(sequence_filename);
-    println!("Longest exact matching repeat: {:?}", interface.get_longest_repeat());
 
 
     //let bwt = interface.BWT_index();
