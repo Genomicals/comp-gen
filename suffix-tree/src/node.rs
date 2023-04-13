@@ -289,40 +289,40 @@ impl Node {
                     target_string = &target_string[child_str.len()..];
                     continue 'outer; //restart the outer loop
                 }
-                    let child_string = child_str;
-                    if child_string.as_bytes()[0] == target_string.as_bytes()[0] { //see if we can split this child to create a valid internal node to return
-                        //INSERT INTERNAL NODE
-                        //println!("INSERTING INTERNAL NODE");
-                        //println!("child children: {}", child.borrow().children.len());
-                        //println!("child id: {}", child.borrow().id);
-                        
-                        let mut split_index = 0;
-                        //while child_string.as_bytes()[split_index] != b'$' && target_string.as_bytes()[split_index] != b'$' && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
-                        while child_string.len() > split_index && target_string.len() > split_index && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
-                            split_index += 1;
-                        }
+                let child_string = child_str;
+                if child_string.as_bytes()[0] == target_string.as_bytes()[0] { //see if we can split this child to create a valid internal node to return
+                    //INSERT INTERNAL NODE
+                    //println!("INSERTING INTERNAL NODE");
+                    //println!("child children: {}", child.borrow().children.len());
+                    //println!("child id: {}", child.borrow().id);
+                    
+                    let mut split_index = 0;
+                    //while child_string.as_bytes()[split_index] != b'$' && target_string.as_bytes()[split_index] != b'$' && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
+                    while child_string.len() > split_index && target_string.len() > split_index && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
+                        split_index += 1;
+                    }
 
-                        // initialize new internal node
-                        let new_internal_rc = Rc::new(RefCell::new(Node::new(config)));
-                        new_internal_rc.borrow_mut().string_index = (child.borrow().string_index.0, child.borrow().string_index.0 + split_index);
-                        new_internal_rc.borrow_mut().parent = Some(rc.clone());
-                        new_internal_rc.borrow_mut().children.push(child.clone()); //no need to sort, only one child
-                        new_internal_rc.borrow_mut().depth = rc.borrow().depth + 1;
-                        new_internal_rc.borrow_mut().string_depth = rc.borrow().string_depth + split_index;
+                    // initialize new internal node
+                    let new_internal_rc = Rc::new(RefCell::new(Node::new(config)));
+                    new_internal_rc.borrow_mut().string_index = (child.borrow().string_index.0, child.borrow().string_index.0 + split_index);
+                    new_internal_rc.borrow_mut().parent = Some(rc.clone());
+                    new_internal_rc.borrow_mut().children.push(child.clone()); //no need to sort, only one child
+                    new_internal_rc.borrow_mut().depth = rc.borrow().depth + 1;
+                    new_internal_rc.borrow_mut().string_depth = rc.borrow().string_depth + split_index;
 
-                        // update child
-                        let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
-                        child.borrow_mut().string_index = new_indices;
-                        child.borrow_mut().depth += 1;
-                        child.borrow_mut().parent = Some(new_internal_rc.clone());
+                    // update child
+                    let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
+                    child.borrow_mut().string_index = new_indices;
+                    child.borrow_mut().depth += 1;
+                    child.borrow_mut().parent = Some(new_internal_rc.clone());
 
-                        // remove child from rc's children and push the new internal node
-                        let index_of_child_in_rc = rc.borrow().children.clone().iter().position(|x| x.as_ptr() == child.as_ptr()).unwrap();
-                        let mut new_children = rc.borrow().children.clone();
-                        new_children.remove(index_of_child_in_rc);
-                        new_children.push(new_internal_rc.clone());
-                        rc.borrow_mut().children = new_children;
-                        rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
+                    // remove child from rc's children and push the new internal node
+                    let index_of_child_in_rc = rc.borrow().children.clone().iter().position(|x| x.as_ptr() == child.as_ptr()).unwrap();
+                    let mut new_children = rc.borrow().children.clone();
+                    new_children.remove(index_of_child_in_rc);
+                    new_children.push(new_internal_rc.clone());
+                    rc.borrow_mut().children = new_children;
+                    rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
                         let x_indices = x.borrow().string_index;
                         let y_indices = y.borrow().string_index;
                         if config.string[x_indices.0..x_indices.1] > config.string[y_indices.0..y_indices.1] {
