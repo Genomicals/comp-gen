@@ -60,7 +60,8 @@ impl Node {
             self.string_depth,
             self.children.len(),
             self.string_index.0,
-            self.get_string(config),
+            //self.get_string(config),
+            &config.string[self.string_index.0..self.string_index.1],
             self.string_index.1,
             Node::reconstruct_string(self.parent.clone().unwrap(), config)
         )
@@ -75,7 +76,8 @@ impl Node {
         if rc.borrow().string_index.1 == 0 {
             return String::new();
         }
-        let self_str = String::from(rc.borrow().get_string(config));
+        let rc_indices = rc.borrow().string_index;
+        let self_str = String::from(&config.string[rc_indices.0..rc_indices.1]);
         let parent_rc = rc.borrow().parent.clone().unwrap();
         let parent_result = Node::reconstruct_string_separators(parent_rc, config);
         parent_result + "|" + &self_str
@@ -87,7 +89,8 @@ impl Node {
         if rc.borrow().string_index.1 == 0 {
             return String::new();
         }
-        let self_str = String::from(rc.borrow().get_string(config));
+        let rc_indices = rc.borrow().string_index;
+        let self_str = String::from(&config.string[rc_indices.0..rc_indices.1]);
         let parent_rc = rc.borrow().parent.clone().unwrap();
         let parent_result = Node::reconstruct_string(parent_rc, config);
         parent_result + &self_str
@@ -114,24 +117,22 @@ impl Node {
     }
 
 
-    /// Get the string this node contains
-    pub fn get_string(&self, config: &TreeConfig) -> String {
-        String::from(&config.string[self.string_index.0..self.string_index.1])
-    }
+    ///// Get the string this node contains
+    //pub fn get_string(&self, config: &TreeConfig) -> String {
+    //    String::from(&config.string[self.string_index.0..self.string_index.1])
+    //}
 
 
     /// Inserts the given suffix (of 'string' starting at 'index') under the given node
     pub fn find_path(rc: Rc<RefCell<Node>>, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
         //println!(">>>Inserting new node under node: {}", rc.borrow().as_string(config));
-        let target_str = String::from(&config.string[index..]); //the string we want to insert
-        //println!("String to add = {}", &target_str);
-
-        // want to iterate through all children to find a good candidate
+        let target_str = &config.string[index..]; //the string we want to insert println!("String to add = {}", &target_str); want to iterate through all children to find a good candidate
         let rc_children = rc.borrow().children.clone();
         for child in &rc_children {
             //println!("Looking at child: {}", child.borrow().as_string(config));
-            if child.borrow().get_string(config).as_bytes()[0] == target_str.as_bytes()[0] { //found a child to split or recurse to
-                let child_str = child.borrow().get_string(config);
+            let string_indices = child.borrow().string_index;
+            if config.string[string_indices.0..string_indices.1].as_bytes()[0] == target_str.as_bytes()[0] { //found a child to split or recurse to
+                let child_str = &config.string[string_indices.0..string_indices.1];
                 let mut split_index = 0;
                 while child_str.len() > split_index && target_str.len() > split_index && child_str.as_bytes()[split_index] == target_str.as_bytes()[split_index] { //want to find how far they match
                     split_index += 1;
@@ -165,7 +166,9 @@ impl Node {
                 new_children.push(new_internal_rc.clone());
                 rc.borrow_mut().children = new_children;
                 rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
-                    if x.borrow().get_string(config) > y.borrow().get_string(config) {
+                    let x_indices = x.borrow().string_index;
+                    let y_indices = y.borrow().string_index;
+                    if config.string[x_indices.0..x_indices.1] > config.string[y_indices.0..y_indices.1] {
                         std::cmp::Ordering::Greater
                     } else {
                         std::cmp::Ordering::Less
@@ -183,7 +186,9 @@ impl Node {
                 let new_leaf_rc = Rc::new(RefCell::new(new_leaf_node));
                 new_internal_rc.borrow_mut().children.push(new_leaf_rc.clone());
                 new_internal_rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
-                    if x.borrow().get_string(config) > y.borrow().get_string(config) {
+                    let x_indices = x.borrow().string_index;
+                    let y_indices = y.borrow().string_index;
+                    if config.string[x_indices.0..x_indices.1] > config.string[y_indices.0..y_indices.1] {
                         std::cmp::Ordering::Greater
                     } else {
                         std::cmp::Ordering::Less
@@ -206,7 +211,9 @@ impl Node {
         let new_node_rc = Rc::new(RefCell::new(new_node));
         rc.borrow_mut().children.push(new_node_rc.clone());
         rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
-            if x.borrow().get_string(config) > y.borrow().get_string(config) {
+                let x_indices = x.borrow().string_index;
+                let y_indices = y.borrow().string_index;
+                if config.string[x_indices.0..x_indices.1] > config.string[y_indices.0..y_indices.1] {
                 std::cmp::Ordering::Greater
             } else {
                 std::cmp::Ordering::Less
@@ -229,18 +236,20 @@ impl Node {
             let rc_children: Vec<Rc<RefCell<Node>>> = rc.borrow().children.clone();
             for child in &rc_children {
                 //println!("Looking at child: {}", child.borrow().as_string(config));
-                if target_string == child.borrow().get_string(config) {
+                let child_indices = child.borrow().string_index;
+                let child_str = &config.string[child_indices.0..child_indices.1];
+                if target_string == child_str {
                     //println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                     return Some(child.clone()); //found the node we want, return it
                 }
-                if target_string.starts_with(&child.borrow().get_string(config)) { //found viable child
-                    if target_string == child.borrow().get_string(config) {
+                if target_string.starts_with(child_str) { //found viable child
+                    if target_string == child_str {
                         //println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                         return Some(child.clone()); //found the node we want, return it
                     }
                     //found a candidate, enter the child
                     rc = child.clone();
-                    target_string = String::from(&target_string[child.borrow().get_string(config).len()..]);
+                    target_string = String::from(&target_string[child_str.len()..]);
                     continue 'outer; //restart the outer loop
                 }
             }
@@ -251,9 +260,9 @@ impl Node {
 
 
     /// Return the node contaning the given string under the given node, create an internal node if valid
-    pub fn node_hops(mut rc: Rc<RefCell<Node>>, alpha: &str, config: &mut TreeConfig) -> Option<Rc<RefCell<Node>>> {
+    pub fn node_hops(mut rc: Rc<RefCell<Node>>, alpha: (usize, usize), config: &mut TreeConfig) -> Option<Rc<RefCell<Node>>> {
         //println!("==> Performing a node hop");
-        let mut target_string = String::from(alpha);
+        let mut target_string = &config.string[alpha.0..alpha.1];
         'outer: loop {
             //println!("Current node: {}", rc.borrow().as_string(config));
             //println!("Finding substring: {:?}", target_string);
@@ -264,55 +273,59 @@ impl Node {
             let mut rc_children: Vec<Rc<RefCell<Node>>> = rc.borrow().children.clone();
             for child in &mut rc_children {
                 //println!("Looking at child: {}", child.borrow().as_string(config));
-                if target_string == child.borrow().get_string(config) {
+                let child_indices = child.borrow().string_index;
+                let child_str = &config.string[child_indices.0..child_indices.1];
+                if target_string == child_str {
                     //println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                     return Some(child.clone()); //found the node we want, return it
                 }
-                if target_string.starts_with(&child.borrow().get_string(config)) { //found viable child
-                    if target_string == child.borrow().get_string(config) {
+                if target_string.starts_with(child_str) { //found viable child
+                    if target_string == child_str {
                         //println!("---Found the node. Has edge string of: {:?}", child.borrow().get_string(config));
                         return Some(child.clone()); //found the node we want, return it
                     }
                     //found a candidate, enter the child
                     rc = child.clone();
-                    target_string = String::from(&target_string[child.borrow().get_string(config).len()..]);
+                    target_string = &target_string[child_str.len()..];
                     continue 'outer; //restart the outer loop
                 }
-                let child_string = child.borrow().get_string(config);
-                if child_string.as_bytes()[0] == target_string.as_bytes()[0] { //see if we can split this child to create a valid internal node to return
-                    //INSERT INTERNAL NODE
-                    //println!("INSERTING INTERNAL NODE");
-                    //println!("child children: {}", child.borrow().children.len());
-                    //println!("child id: {}", child.borrow().id);
-                    
-                    let mut split_index = 0;
-                    //while child_string.as_bytes()[split_index] != b'$' && target_string.as_bytes()[split_index] != b'$' && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
-                    while child_string.len() > split_index && target_string.len() > split_index && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
-                        split_index += 1;
-                    }
+                    let child_string = child_str;
+                    if child_string.as_bytes()[0] == target_string.as_bytes()[0] { //see if we can split this child to create a valid internal node to return
+                        //INSERT INTERNAL NODE
+                        //println!("INSERTING INTERNAL NODE");
+                        //println!("child children: {}", child.borrow().children.len());
+                        //println!("child id: {}", child.borrow().id);
+                        
+                        let mut split_index = 0;
+                        //while child_string.as_bytes()[split_index] != b'$' && target_string.as_bytes()[split_index] != b'$' && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
+                        while child_string.len() > split_index && target_string.len() > split_index && child_string.as_bytes()[split_index] == target_string.as_bytes()[split_index] {
+                            split_index += 1;
+                        }
 
-                    // initialize new internal node
-                    let new_internal_rc = Rc::new(RefCell::new(Node::new(config)));
-                    new_internal_rc.borrow_mut().string_index = (child.borrow().string_index.0, child.borrow().string_index.0 + split_index);
-                    new_internal_rc.borrow_mut().parent = Some(rc.clone());
-                    new_internal_rc.borrow_mut().children.push(child.clone()); //no need to sort, only one child
-                    new_internal_rc.borrow_mut().depth = rc.borrow().depth + 1;
-                    new_internal_rc.borrow_mut().string_depth = rc.borrow().string_depth + split_index;
+                        // initialize new internal node
+                        let new_internal_rc = Rc::new(RefCell::new(Node::new(config)));
+                        new_internal_rc.borrow_mut().string_index = (child.borrow().string_index.0, child.borrow().string_index.0 + split_index);
+                        new_internal_rc.borrow_mut().parent = Some(rc.clone());
+                        new_internal_rc.borrow_mut().children.push(child.clone()); //no need to sort, only one child
+                        new_internal_rc.borrow_mut().depth = rc.borrow().depth + 1;
+                        new_internal_rc.borrow_mut().string_depth = rc.borrow().string_depth + split_index;
 
-                    // update child
-                    let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
-                    child.borrow_mut().string_index = new_indices;
-                    child.borrow_mut().depth += 1;
-                    child.borrow_mut().parent = Some(new_internal_rc.clone());
+                        // update child
+                        let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
+                        child.borrow_mut().string_index = new_indices;
+                        child.borrow_mut().depth += 1;
+                        child.borrow_mut().parent = Some(new_internal_rc.clone());
 
-                    // remove child from rc's children and push the new internal node
-                    let index_of_child_in_rc = rc.borrow().children.clone().iter().position(|x| x.as_ptr() == child.as_ptr()).unwrap();
-                    let mut new_children = rc.borrow().children.clone();
-                    new_children.remove(index_of_child_in_rc);
-                    new_children.push(new_internal_rc.clone());
-                    rc.borrow_mut().children = new_children;
-                    rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
-                        if x.borrow().get_string(config) > y.borrow().get_string(config) {
+                        // remove child from rc's children and push the new internal node
+                        let index_of_child_in_rc = rc.borrow().children.clone().iter().position(|x| x.as_ptr() == child.as_ptr()).unwrap();
+                        let mut new_children = rc.borrow().children.clone();
+                        new_children.remove(index_of_child_in_rc);
+                        new_children.push(new_internal_rc.clone());
+                        rc.borrow_mut().children = new_children;
+                        rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
+                        let x_indices = x.borrow().string_index;
+                        let y_indices = y.borrow().string_index;
+                        if config.string[x_indices.0..x_indices.1] > config.string[y_indices.0..y_indices.1] {
                             std::cmp::Ordering::Greater
                         } else {
                             std::cmp::Ordering::Less
@@ -365,14 +378,14 @@ impl Node {
                 let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u
                 //println!(">> v_start: {}", v_start);
                 //println!(">> beta_len: {}", beta_len);
-                v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[v_start..(v_start + beta_len)], config).unwrap(); //from end of v' through beta
+                v_rc = Node::node_hops(v_prime_rc.clone(), (v_start, v_start + beta_len), config).unwrap(); //from end of v' through beta
             } else {
                 // the grandparent is the root, CASE IIB
                 //println!("Case IIB");
                 // v_prime ends at 0, because it's the root
                 let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u - 1, NOTE: beta_prime is one less than beta
                 //println!("beta_len: {}", beta_len);
-                v_rc = Node::node_hops(v_prime_rc.clone(), &String::from(&config.string)[index..(index + beta_len - 1)], config).unwrap(); //from end of v' through beta
+                v_rc = Node::node_hops(v_prime_rc.clone(), (index, index + beta_len - 1), config).unwrap(); //from end of v' through beta
                 //println!("v_rc children: {}", v_rc.borrow().children.len());
                 //println!("v_rc id: {}", v_rc.borrow().id);
                 //println!("v_rc indices: {}, {}", v_rc.borrow().string_index.0, v_rc.borrow().string_index.1);

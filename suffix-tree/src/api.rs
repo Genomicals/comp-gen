@@ -111,10 +111,11 @@ impl Interface {
         }
         
         for child in &children {
+            let child_indices = child.borrow().string_index;
             println!("ID: {:?}, Depth: {:?}, Edge: {:?}",
                 child.borrow().id,
                 child.borrow().depth,
-                child.borrow().get_string(&self.config)
+                &self.config.string[child_indices.0..child_indices.1],
             );
         }
     }
@@ -186,10 +187,11 @@ impl Interface {
     pub fn DFS(&self, rc: Rc<RefCell<Node>>) {
 
         //print node
+        let rc_indices = rc.borrow().string_index;
         println!("ID: {:?}, Depth: {:?}, Edge: {:?}, String Depth: {:?}",
             rc.borrow().id,
             rc.borrow().depth,
-            rc.borrow().get_string(&self.config),
+            &self.config.string[rc_indices.0..rc_indices.1],
             rc.borrow().string_depth,
         );
 
@@ -270,9 +272,9 @@ impl Interface {
     }
 
 
-    /// Internal function for hopping
-    pub fn node_hops(&mut self, string: &str) -> Option<Rc<RefCell<Node>>> {
-        Node::node_hops(self.root.clone(), string, &mut self.config)
-    }
+    ///// Internal function for hopping
+    //pub fn node_hops(&mut self, string: &str) -> Option<Rc<RefCell<Node>>> {
+    //    Node::node_hops(self.root.clone(), string, &mut self.config)
+    //}
 }
 
