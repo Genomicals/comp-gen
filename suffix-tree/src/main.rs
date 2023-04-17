@@ -97,7 +97,7 @@ fn main() {
 
     // start generating the suffix tree
     let mut interface = Interface::new();
-    let tree = interface.make_tree_with_links(&sequence, &alphabet);
+    let tree = interface.make_tree(&sequence, &alphabet);
 
 
 
@@ -107,67 +107,5 @@ fn main() {
     println!("Total nodes in the tree: {:?}", total_nodes);
     println!("Total leaves in the tree: {:?}", sequence.len() + 1);
     println!("Total internal nodes in the tree: {:?}", total_nodes - (sequence.len() + 1));
-    //println!("Average string depth of an internal node: {:?}", interface.average_string_depth());
-    //println!("String depth of deepest internal node: {:?}", interface.get_deepest_node_string_depth());
-    //println!("Depth of deepest internal node: {:?}", interface.get_deepest_node_depth());
-    //println!("Longest exact matching repeat: {:?}", interface.get_longest_repeat());
     interface.DFS_metrics(sequence_filename);
-
-
-    //let bwt = interface.BWT_index();
-    //println!("BWT = {:?}", bwt);
-
-    //Get some node u in the tree
-    //let s = &sequence[5..];
-    //println!("Finding node: {:?}", s);
-    //let u = interface.node_hops(s);
-    //interface.display_children(u.clone().unwrap());
-
-
-    ////Get some node u in the tree
-    //let s = &sequence[10..];
-    //println!("Finding node: {:?}", s);
-    //let u = interface.node_hops(s);
-    //interface.display_children(u.clone().unwrap());
-
-    ////print the children of node u
-    //println!("\n\nDFS TRAVERSAL++++++++++++++++++++++++++++");
-    //interface.DFS(tree.clone());
-
-
-    //// println!("\n\nDEBUG PRINT++++++++++++++++++++++++++++");
-    //// interface.print_tree();
-
-
-    //if let None = u {
-    //    println!("Ran into an error, couldn't find the node!");
-    //    return;
-    //}
-
-    ////print the children of node u-
-    //println!("\n\nCHILDREN++++++++++++++++++++++++++++");
-    //interface.display_children(u.unwrap().clone());
-
-
-    // println!("\n\nDoing tree printing*****************************************************\n\n");
-
-    // Node::print_tree(rc_refcell_root.clone(), word);
-
-    // println!("\n\nDoing hops on all suffixes*****************************************************\n\n");
-    // let word2 = "banana$";
-    // for i in 0..word2.len() {
-    //     println!("next Suffix = {:?}_____________________________________", &word2[i..]);
-       
-    //     let res = Node::node_hops(rc_refcell_root.clone(), word, &word2[i..]);
-    //     match res {
-    //         None => println!("Could not find a node"),
-    //         Some(refer) => println!("Resulting node: {:?}, {:?}, depth {:?}",
-    //             refer.borrow().id,
-    //             refer.borrow().get_string(word),
-    //             refer.borrow().depth,
-    //         ),
-    //     }
-
-    // }
-    
 }
