@@ -173,9 +173,9 @@ impl Interface {
         // print
         println!("Average string depth of an internal node: {:?}", average_depth);
         println!("String depth of deepest internal node: {:?}", stringest.borrow().string_depth);
-        println!("1String depth of deepest internal node: {:?}", deepest.borrow().string_depth);
-        println!("Depth of deepest internal node: {:?}", deepest.borrow().depth);
-        println!("1Depth of deepest internal node: {:?}", stringest.borrow().depth);
+        //println!("1String depth of deepest internal node: {:?}", deepest.borrow().string_depth);
+        //println!("Depth of deepest internal node: {:?}", deepest.borrow().depth);
+        //println!("1Depth of deepest internal node: {:?}", stringest.borrow().depth);
         let full_file_name = String::from("output/") + &file_name + "_BWT.txt";
         fs::write(&full_file_name, &bwt_string_file).expect("Unable to write file");
         //println!("\nBWT = \"{}\"", bwt_string);
@@ -185,26 +185,53 @@ impl Interface {
 
     /// Depth-first traversal metrics, returns 
     pub fn DFS_metrics_recursive(rc: Rc<RefCell<Node>>, total_depth: usize, leaves: &mut Vec<usize>, mut deepest: Rc<RefCell<Node>>, mut stringest: Rc<RefCell<Node>>) -> (usize, &mut Vec<usize>, Rc<RefCell<Node>>, Rc<RefCell<Node>>) {
-        // update the depth
-        if rc.borrow().depth > deepest.borrow().depth {
-            deepest = rc.clone();
-        }
+        let children = rc.borrow().children.clone();
 
-        // update the string depth
-        if rc.borrow().string_depth > stringest.borrow().string_depth {
-            stringest = rc.clone();
+        ////temp
+        //if rc.borrow().depth == 14 {
+        //    println!("found an rc with depth 14");
+        //    if children.len() > 0 {
+        //        println!("and it's an internal node");
+        //    }
+        //}
+        //if rc.borrow().string_depth >= 14 {
+        //    if children.len() > 0 {
+        //        println!("found an rc with string depth {}", rc.borrow().string_depth);
+        //        println!("and it's an internal node");
+        //    }
+        //}
+
+        // update the depth if no children, i.e. an internal node
+        if children.len() > 0 {
+            //update the node depth
+            if rc.borrow().depth > deepest.borrow().depth {
+                deepest = rc.clone();
+            }
+
+            // update the string depth
+            if rc.borrow().string_depth > stringest.borrow().string_depth {
+                stringest = rc.clone();
+            }
         }
 
         // start recursive process
-        let children = rc.borrow().children.clone();
         let mut new_depth = total_depth + rc.borrow().string_depth;
-        let mut new_deepest = deepest.clone();
-        let mut new_stringest = stringest.clone();
+        let mut new_deepest;
+        let mut new_stringest;
         if children.len() == 0 { //if this node is a leaf
             leaves.push(rc.borrow().id) //collect leaf ids
         }
         for child in children {
             (new_depth, _, new_deepest, new_stringest) = Interface::DFS_metrics_recursive(child, new_depth, leaves, deepest.clone(), stringest.clone()); //collect metrics for each child
+            
+            //temp
+            if new_deepest.borrow().depth == 14 {
+                println!("found a node with depth 14");
+            }
+            if new_deepest.borrow().string_depth == 14 {
+                println!("found a node with string depth 14");
+            }
+
             if new_deepest.borrow().depth > deepest.borrow().depth {
                 deepest = new_deepest.clone();
             }
@@ -212,7 +239,7 @@ impl Interface {
                 stringest = new_stringest.clone();
             }
         }
-        
+
         (new_depth, leaves, deepest, stringest)
     }
 
