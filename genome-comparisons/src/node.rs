@@ -4,12 +4,12 @@ use std::{rc::Rc, cell::RefCell, collections::HashSet};
 #[derive(Clone, Default, PartialEq, Debug)]
 pub struct TreeConfig {
     pub next_id: usize,
-    pub string: String,
+    pub strings: Vec<String>,
     pub alphabet: HashSet<char>,
 }
 impl TreeConfig {
     pub fn new(string: &str, alphabet: HashSet<char>) -> Self {
-        TreeConfig {next_id: 0, string: String::from(string), alphabet: alphabet}
+        TreeConfig {next_id: 0, strings: vec![String::from(string)], alphabet: alphabet}
     }
 
     pub fn next(&mut self) -> usize {
@@ -29,7 +29,8 @@ pub struct Node { //string$, suffix_link -> tring$
     pub suffix_link: Option<Rc<RefCell<Node>>>, //points to the suffix link
     pub depth: u32,
     pub string_depth: usize,
-    pub source_string: usize, //what string this node falls under, for n strings 0..n represent that string, and n represents mixed
+    pub source_string: usize, //the string this node's label comes from
+    pub node_color: usize, //what string this node falls under, for n strings 0..n represent that string, and n represents mixed
 }
 impl Node {
     pub fn new(config: &mut TreeConfig) -> Self {
@@ -42,6 +43,7 @@ impl Node {
             depth: 0,
             string_depth: 0,
             source_string: 0,
+            node_color: 0,
         }
     }
 
@@ -55,7 +57,7 @@ impl Node {
             self.children.len(),
             self.string_index.0,
             //self.get_string(config),
-            &config.string[self.string_index.0..self.string_index.1],
+            &config.strings[self.source_string][self.string_index.0..self.string_index.1],
             self.string_index.1,
             Node::reconstruct_string(self.parent.clone().unwrap(), config)
         )
@@ -71,7 +73,7 @@ impl Node {
             return String::new();
         }
         let rc_indices = rc.borrow().string_index;
-        let self_str = String::from(&config.string[rc_indices.0..rc_indices.1]);
+        let self_str = String::from(&config.strings[rc.borrow().source_string][rc_indices.0..rc_indices.1]);
         let parent_rc = rc.borrow().parent.clone().unwrap();
         let parent_result = Node::reconstruct_string_separators(parent_rc, config);
         parent_result + "|" + &self_str
@@ -84,7 +86,7 @@ impl Node {
             return String::new();
         }
         let rc_indices = rc.borrow().string_index;
-        let self_str = String::from(&config.string[rc_indices.0..rc_indices.1]);
+        let self_str = String::from(&config.strings[rc.borrow().source_string][rc_indices.0..rc_indices.1]);
         let parent_rc = rc.borrow().parent.clone().unwrap();
         let parent_result = Node::reconstruct_string(parent_rc, config);
         parent_result + &self_str
@@ -113,12 +115,12 @@ impl Node {
 
     /// Inserts the given suffix (of 'string' starting at 'index') under the given node
     pub fn find_path(rc: Rc<RefCell<Node>>, index: usize, source_string: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
-        let target_str = &config.string[index..]; //the string we want to insert println!("String to add = {}", &target_str); want to iterate through all children to find a good candidate
+        let target_str = &config.strings[rc.borrow().source_string][index..]; //the string we want to insert println!("String to add = {}", &target_str); want to iterate through all children to find a good candidate
         let rc_children = rc.borrow().children.clone();
         for child in &rc_children {
             let string_indices = child.borrow().string_index;
-            if config.string[string_indices.0..string_indices.1].as_bytes()[0] == target_str.as_bytes()[0] { //found a child to split or recurse to
-                let child_str = &config.string[string_indices.0..string_indices.1];
+            if config.strings[rc.borrow().source_string][string_indices.0..string_indices.1].as_bytes()[0] == target_str.as_bytes()[0] { //found a child to split or recurse to
+                let child_str = &config.strings[rc.borrow().source_string][string_indices.0..string_indices.1];
                 let mut split_index = 0;
                 while child_str.len() > split_index && target_str.len() > split_index && child_str.as_bytes()[split_index] == target_str.as_bytes()[split_index] { //want to find how far they match
                     split_index += 1;
@@ -154,7 +156,7 @@ impl Node {
                 rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
                     let x_indices = x.borrow().string_index;
                     let y_indices = y.borrow().string_index;
-                    if config.string[x_indices.0..x_indices.1] > config.string[y_indices.0..y_indices.1] {
+                    if config.strings[rc.borrow().source_string][x_indices.0..x_indices.1] > config.strings[rc.borrow().source_string][y_indices.0..y_indices.1] {
                         std::cmp::Ordering::Greater
                     } else {
                         std::cmp::Ordering::Less
@@ -167,14 +169,14 @@ impl Node {
                 let mut new_leaf_node = Node::new(config);
                 new_leaf_node.parent = Some(new_internal_rc.clone()); //set the parent
                 new_leaf_node.depth = new_internal_rc.borrow().depth + 1;
-                new_leaf_node.string_index = (index + internal_len, config.string.len()); //set the start index after the current node's length
-                new_leaf_node.string_depth = new_internal_rc.borrow().string_depth + config.string.len() - new_leaf_node.string_index.0;
+                new_leaf_node.string_index = (index + internal_len, config.strings[rc.borrow().source_string].len()); //set the start index after the current node's length
+                new_leaf_node.string_depth = new_internal_rc.borrow().string_depth + config.strings[rc.borrow().source_string].len() - new_leaf_node.string_index.0;
                 let new_leaf_rc = Rc::new(RefCell::new(new_leaf_node));
                 new_internal_rc.borrow_mut().children.push(new_leaf_rc.clone());
                 new_internal_rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
                     let x_indices = x.borrow().string_index;
                     let y_indices = y.borrow().string_index;
-                    if config.string[x_indices.0..x_indices.1] > config.string[y_indices.0..y_indices.1] {
+                    if config.strings[rc.borrow().source_string][x_indices.0..x_indices.1] > config.strings[rc.borrow().source_string][y_indices.0..y_indices.1] {
                         std::cmp::Ordering::Greater
                     } else {
                         std::cmp::Ordering::Less
@@ -189,14 +191,14 @@ impl Node {
         let mut new_node = Node::new(config);
         new_node.parent = Some(rc.clone()); //set the parent
         new_node.depth = rc.borrow().depth + 1;
-        new_node.string_index = (index, config.string.len()); //set the start index after the current node's length
-        new_node.string_depth = rc.borrow().string_depth + config.string.len() - new_node.string_index.0;
+        new_node.string_index = (index, config.strings[rc.borrow().source_string].len()); //set the start index after the current node's length
+        new_node.string_depth = rc.borrow().string_depth + config.strings[rc.borrow().source_string].len() - new_node.string_index.0;
         let new_node_rc = Rc::new(RefCell::new(new_node));
         rc.borrow_mut().children.push(new_node_rc.clone());
         rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
                 let x_indices = x.borrow().string_index;
                 let y_indices = y.borrow().string_index;
-                if config.string[x_indices.0..x_indices.1] > config.string[y_indices.0..y_indices.1] {
+                if config.strings[rc.borrow().source_string][x_indices.0..x_indices.1] > config.strings[rc.borrow().source_string][y_indices.0..y_indices.1] {
                 std::cmp::Ordering::Greater
             } else {
                 std::cmp::Ordering::Less
@@ -214,7 +216,7 @@ impl Node {
             let rc_children: Vec<Rc<RefCell<Node>>> = rc.borrow().children.clone();
             for child in &rc_children {
                 let child_indices = child.borrow().string_index;
-                let child_str = &config.string[child_indices.0..child_indices.1];
+                let child_str = &config.strings[rc.borrow().source_string][child_indices.0..child_indices.1];
                 if target_string == child_str {
                     return Some(child.clone()); //found the node we want, return it
                 }
@@ -236,7 +238,7 @@ impl Node {
 
     /// Return the node contaning the given string under the given node, create an internal node if valid
     pub fn node_hops(mut rc: Rc<RefCell<Node>>, alpha: (usize, usize), config: &mut TreeConfig) -> Option<Rc<RefCell<Node>>> {
-        let mut target_string = &config.string[alpha.0..alpha.1];
+        let mut target_string = &config.strings[rc.borrow().source_string][alpha.0..alpha.1];
         'outer: loop {
             if target_string.len() == 0 {
                 return Some(rc.clone());
@@ -244,7 +246,7 @@ impl Node {
             let mut rc_children: Vec<Rc<RefCell<Node>>> = rc.borrow().children.clone();
             for child in &mut rc_children {
                 let child_indices = child.borrow().string_index;
-                let child_str = &config.string[child_indices.0..child_indices.1];
+                let child_str = &config.strings[rc.borrow().source_string][child_indices.0..child_indices.1];
                 if target_string == child_str {
                     return Some(child.clone()); //found the node we want, return it
                 }
@@ -288,7 +290,7 @@ impl Node {
                     rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
                         let x_indices = x.borrow().string_index;
                         let y_indices = y.borrow().string_index;
-                        if config.string[x_indices.0..x_indices.1] > config.string[y_indices.0..y_indices.1] {
+                        if config.strings[rc.borrow().source_string][x_indices.0..x_indices.1] > config.strings[rc.borrow().source_string][y_indices.0..y_indices.1] {
                             std::cmp::Ordering::Greater
                         } else {
                             std::cmp::Ordering::Less

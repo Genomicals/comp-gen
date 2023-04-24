@@ -26,7 +26,7 @@ impl Interface {
         self.root.borrow_mut().suffix_link = Some(self_rc);
         let mut cur = Node::find_path(self.root.clone(), 0, source_string, &mut self.config);
 
-        for i in 1..self.config.string.len() {
+        for i in 1..string.len() {
             cur = Node::suffix_link_insert(cur.clone(), i, source_string, &mut self.config);
         }
 
@@ -35,10 +35,10 @@ impl Interface {
 
 
     /// Adds another string to this suffix tree
-    pub fn add_string(&mut self, string: &str, alphabet: &HashSet<char>, source_string: usize) {
+    pub fn add_string(&mut self, string: &str, source_string: usize) {
         let mut cur = Node::find_path(self.root.clone(), 0, source_string, &mut self.config);
 
-        for i in 1..self.config.string.len() {
+        for i in 1..string.len() {
             cur = Node::suffix_link_insert(cur.clone(), i, source_string, &mut self.config);
         }
     }
@@ -63,58 +63,58 @@ impl Interface {
             println!("ID: {:?}, Depth: {:?}, Edge: {:?}",
                 child.borrow().id,
                 child.borrow().depth,
-                &self.config.string[child_indices.0..child_indices.1],
+                &self.config.strings[child.borrow().source_string][child_indices.0..child_indices.1],
             );
         }
     }
 
     
-    /// Produce the metrics of the suffix tree via DFS
-    pub fn DFS_metrics(&self, file_name: String) -> String {
-        let mut leaf_vec = Vec::new();
-        let (total_depth, leaves, stringest) = Interface::DFS_metrics_recursive(self.root.clone(), 0, &mut leaf_vec, self.root.clone());
+    ///// Produce the metrics of the suffix tree via DFS
+    //pub fn DFS_metrics(&self, file_name: String) -> String {
+    //    let mut leaf_vec = Vec::new();
+    //    let (total_depth, leaves, stringest) = Interface::DFS_metrics_recursive(self.root.clone(), 0, &mut leaf_vec, self.root.clone());
 
-        let total_nodes = self.get_node_count();
-        let internal_nodes = total_nodes - (self.config.string.len() + 1);
-        let average_depth: f64 = total_depth as f64 / internal_nodes as f64;
-        
-        // first add indices to all the id's
-        let mut indexed_leaves: Vec<(usize, usize)> = Vec::with_capacity(self.config.string.len()); //id, index
-        for i in 0..leaves.len() {
-            indexed_leaves.push((leaves[i], i));
-        }
-        indexed_leaves.sort_unstable();
+    //    let total_nodes = self.get_node_count();
+    //    let internal_nodes = total_nodes - (self.config.string.len() + 1);
+    //    let average_depth: f64 = total_depth as f64 / internal_nodes as f64;
+    //    
+    //    // first add indices to all the id's
+    //    let mut indexed_leaves: Vec<(usize, usize)> = Vec::with_capacity(self.config.string.len()); //id, index
+    //    for i in 0..leaves.len() {
+    //        indexed_leaves.push((leaves[i], i));
+    //    }
+    //    indexed_leaves.sort_unstable();
 
-        // then normalize all the id's
-        let mut revised_indexed_leaves = Vec::with_capacity(self.config.string.len()); //will normalize the id's so they're continuous without gaps
-        for i in 0..indexed_leaves.len() {
-            revised_indexed_leaves.push((i, indexed_leaves[i].1));
-        }
-        revised_indexed_leaves.sort_unstable_by(|left, right| left.1.partial_cmp(&right.1).unwrap()); //sort by index
+    //    // then normalize all the id's
+    //    let mut revised_indexed_leaves = Vec::with_capacity(self.config.string.len()); //will normalize the id's so they're continuous without gaps
+    //    for i in 0..indexed_leaves.len() {
+    //        revised_indexed_leaves.push((i, indexed_leaves[i].1));
+    //    }
+    //    revised_indexed_leaves.sort_unstable_by(|left, right| left.1.partial_cmp(&right.1).unwrap()); //sort by index
 
-        // push the indices in the correct order
-        let mut bwt_string = String::with_capacity(self.config.string.len());
-        let mut bwt_string_file = String::with_capacity(self.config.string.len() * 2);
-        let the_str = self.config.string.as_bytes();
-        for i in 0..revised_indexed_leaves.len() {
-            if revised_indexed_leaves[i].0 == 0 {
-                bwt_string.push(the_str[self.config.string.len() - 1] as char);
-                bwt_string_file.push(the_str[self.config.string.len() - 1] as char);
-                bwt_string_file.push('\n');
-            } else {
-                bwt_string.push(the_str[revised_indexed_leaves[i].0 - 1] as char);
-                bwt_string_file.push(the_str[revised_indexed_leaves[i].0 - 1] as char);
-                bwt_string_file.push('\n');
-            }
-        }
+    //    // push the indices in the correct order
+    //    let mut bwt_string = String::with_capacity(self.config.string.len());
+    //    let mut bwt_string_file = String::with_capacity(self.config.string.len() * 2);
+    //    let the_str = self.config.string.as_bytes();
+    //    for i in 0..revised_indexed_leaves.len() {
+    //        if revised_indexed_leaves[i].0 == 0 {
+    //            bwt_string.push(the_str[self.config.string.len() - 1] as char);
+    //            bwt_string_file.push(the_str[self.config.string.len() - 1] as char);
+    //            bwt_string_file.push('\n');
+    //        } else {
+    //            bwt_string.push(the_str[revised_indexed_leaves[i].0 - 1] as char);
+    //            bwt_string_file.push(the_str[revised_indexed_leaves[i].0 - 1] as char);
+    //            bwt_string_file.push('\n');
+    //        }
+    //    }
 
-        // print
-        println!("Average string depth of an internal node: {:?}", average_depth);
-        println!("String depth of deepest internal node: {:?}", stringest.borrow().string_depth);
-        let full_file_name = String::from("output/") + &file_name + "_BWT.txt";
-        fs::write(&full_file_name, &bwt_string_file).expect("Unable to write file");
-        bwt_string
-    }
+    //    // print
+    //    println!("Average string depth of an internal node: {:?}", average_depth);
+    //    println!("String depth of deepest internal node: {:?}", stringest.borrow().string_depth);
+    //    let full_file_name = String::from("output/") + &file_name + "_BWT.txt";
+    //    fs::write(&full_file_name, &bwt_string_file).expect("Unable to write file");
+    //    bwt_string
+    //}
 
 
     /// Depth-first traversal metrics, recursive
