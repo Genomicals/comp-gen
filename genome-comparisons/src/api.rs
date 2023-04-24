@@ -17,21 +17,31 @@ impl Interface {
 
 
     /// Creates a suffix tree with the given string and alphabet, includes suffix links
-    pub fn make_tree(&mut self, string: &str, alphabet: &HashSet<char>) -> Rc<RefCell<Node>> {
+    pub fn make_tree(&mut self, string: &str, alphabet: &HashSet<char>, source_string: usize) -> Rc<RefCell<Node>> {
         let mut config = TreeConfig::new(&(String::from(string) + "$"), alphabet.clone());
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
         self.config = config;
         let self_rc = self.root.clone();
         self.root.borrow_mut().parent = Some(self_rc.clone());
         self.root.borrow_mut().suffix_link = Some(self_rc);
-        let mut cur = Node::find_path(self.root.clone(), 0, &mut self.config);
+        let mut cur = Node::find_path(self.root.clone(), 0, source_string, &mut self.config);
 
         for i in 1..self.config.string.len() {
-            cur = Node::suffix_link_insert(cur.clone(), i, &mut self.config);
+            cur = Node::suffix_link_insert(cur.clone(), i, source_string, &mut self.config);
         }
 
         return self.root.clone();
     } 
+
+
+    /// Adds another string to this suffix tree
+    pub fn add_string(&mut self, string: &str, alphabet: &HashSet<char>, source_string: usize) {
+        let mut cur = Node::find_path(self.root.clone(), 0, source_string, &mut self.config);
+
+        for i in 1..self.config.string.len() {
+            cur = Node::suffix_link_insert(cur.clone(), i, source_string, &mut self.config);
+        }
+    }
 
 
     pub fn get_node_count(&self) -> usize {

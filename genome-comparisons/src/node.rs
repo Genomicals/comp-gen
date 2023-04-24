@@ -1,13 +1,4 @@
-
-/*
-Node:
-    link to parent, option
-    suffix link
-    string index
-*/
-
 use std::{rc::Rc, cell::RefCell, collections::HashSet};
-
 
 
 #[derive(Clone, Default, PartialEq, Debug)]
@@ -28,6 +19,7 @@ impl TreeConfig {
 }
 
 
+/// Node for a general suffix tree
 #[derive(Clone, Default, PartialEq, Debug)]
 pub struct Node { //string$, suffix_link -> tring$
     pub id: usize,
@@ -37,6 +29,7 @@ pub struct Node { //string$, suffix_link -> tring$
     pub suffix_link: Option<Rc<RefCell<Node>>>, //points to the suffix link
     pub depth: u32,
     pub string_depth: usize,
+    pub source_string: usize, //what string this node falls under, for n strings 0..n represent that string, and n represents mixed
 }
 impl Node {
     pub fn new(config: &mut TreeConfig) -> Self {
@@ -48,6 +41,7 @@ impl Node {
             suffix_link: None,
             depth: 0,
             string_depth: 0,
+            source_string: 0,
         }
     }
 
@@ -118,7 +112,7 @@ impl Node {
 
 
     /// Inserts the given suffix (of 'string' starting at 'index') under the given node
-    pub fn find_path(rc: Rc<RefCell<Node>>, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
+    pub fn find_path(rc: Rc<RefCell<Node>>, index: usize, source_string: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
         let target_str = &config.string[index..]; //the string we want to insert println!("String to add = {}", &target_str); want to iterate through all children to find a good candidate
         let rc_children = rc.borrow().children.clone();
         for child in &rc_children {
@@ -134,7 +128,7 @@ impl Node {
                 if split_index == child_str.len() {
                     drop(target_str);
                     drop(child_str);
-                    return Node::find_path(child.clone(), index + split_index, config); //recursion
+                    return Node::find_path(child.clone(), index + split_index, source_string, config); //recursion
                 }
 
                 // can't recurse down the child, so split the child
@@ -311,7 +305,7 @@ impl Node {
 
 
     /// Insert the given suffix, provided the previous suffix
-    pub fn suffix_link_insert(rc: Rc<RefCell<Node>>, index: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
+    pub fn suffix_link_insert(rc: Rc<RefCell<Node>>, index: usize, source_string: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
         let u_rc_maybe = rc.clone().borrow().parent.clone();
         if let None = u_rc_maybe {
             return rc;
@@ -323,11 +317,11 @@ impl Node {
             if u_rc.borrow().id != 0 {
                 // the parent is not the root, CASE IA
                 let string_depth = v_rc.borrow().string_depth;
-                return Node::find_path(v_rc.clone(), index + string_depth, config);
+                return Node::find_path(v_rc.clone(), index + string_depth, source_string, config);
 
             } else {
                 // the parent is the root, CASE IB
-                return Node::find_path(v_rc.clone(), index, config);
+                return Node::find_path(v_rc.clone(), index, source_string, config);
             }
         } else {
             //SL(u) is not known
@@ -349,7 +343,7 @@ impl Node {
             }
             u_rc.borrow_mut().suffix_link = Some(v_rc.clone()); //establish link
             let new_index = rc.borrow().string_index.0; //new index should be the old rc's index
-            return Node::find_path(v_rc.clone(), new_index, config); //insert string starting at v's ending index
+            return Node::find_path(v_rc.clone(), new_index, source_string, config); //insert string starting at v's ending index
         }
     } 
 }

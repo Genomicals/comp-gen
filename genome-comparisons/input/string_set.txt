@@ -1,0 +1,14 @@
+>s1
+apple
+>s2
+apply
+>s3
+application
+>s4
+applet
+>s5
+sap
+>s6
+traps
+>s7
+wrapping
