@@ -37,10 +37,48 @@ impl Interface {
     /// Adds another string to this suffix tree
     pub fn add_string(&mut self, string: &str, source_string: usize) {
         let mut cur = Node::find_path(self.root.clone(), 0, source_string, &mut self.config);
+        self.config.strings.push(String::from(string)); //add the new string to the list
 
         for i in 1..string.len() {
             cur = Node::suffix_link_insert(cur.clone(), i, source_string, &mut self.config);
         }
+    }
+
+
+    /// Color the tree nodes
+    pub fn color_tree(&mut self) {
+        Interface::color_tree_recursive(self.root.clone());
+    }
+    fn color_tree_recursive(node: Rc<RefCell<Node>>) {
+        let children = node.borrow().children.clone();
+
+        if children.len() == 0 { //don't change the color of leaves
+            return;
+        }
+
+        let mut color = children[0].borrow().node_color; //will inherit a pure or mixed color from children
+        if color == -1 {
+            node.borrow_mut().node_color = -1; //if the first child is mixed, then we must be mixed
+            return;
+        }
+        for child in children {
+            if child.borrow().node_color != color {
+                color = -1; //if any node color doesn't match up with the initial, then this node must be mixed color
+                break;
+            }
+        }
+
+        node.borrow_mut().node_color = color;
+    }
+
+
+    /// Returns a vector of fingerprints for each string in the tree
+    pub fn get_fingerprints(&mut self) -> Vec<Vec<String>> {
+        let fingerprints = Vec::with_capacity(self.config.strings.len());
+        
+
+        fingerprints
+
     }
 
 

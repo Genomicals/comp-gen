@@ -4,7 +4,7 @@ use std::{rc::Rc, cell::RefCell, collections::HashSet};
 #[derive(Clone, Default, PartialEq, Debug)]
 pub struct TreeConfig {
     pub next_id: usize,
-    pub strings: Vec<String>,
+    pub strings: Vec<String>, //a copy of each string in the tree
     pub alphabet: HashSet<char>,
 }
 impl TreeConfig {
@@ -30,7 +30,7 @@ pub struct Node { //string$, suffix_link -> tring$
     pub depth: u32,
     pub string_depth: usize,
     pub source_string: usize, //the string this node's label comes from
-    pub node_color: usize, //what string this node falls under, for n strings 0..n represent that string, and n represents mixed
+    pub node_color: isize, //what string this node falls under
 }
 impl Node {
     pub fn new(config: &mut TreeConfig) -> Self {
@@ -126,11 +126,18 @@ impl Node {
                     split_index += 1;
                 }
                 
-                // recurse down the child
+                // check if we exhaust 
                 if split_index == child_str.len() {
-                    drop(target_str);
-                    drop(child_str);
-                    return Node::find_path(child.clone(), index + split_index, source_string, config); //recursion
+                    //if child_str.as_bytes()[split_index - 1] == '$' as u8 { //the node already exists, make node mixed if two+ strings end here
+                    if target_str.len() == child_str.len() { //this node is a leaf, make leaf mixed if two+ strings end here
+                        if child.borrow().source_string != source_string { //make sure the source string of the node isn't the same as the one we're adding
+                            child.borrow_mut().node_color = -1;
+                        }
+                    } else { //we've exhausted the child's string but not the target
+                        drop(target_str);
+                        drop(child_str);
+                        return Node::find_path(child.clone(), index + split_index, source_string, config); //recursion down the child
+                    }
                 }
 
                 // can't recurse down the child, so split the child
@@ -167,6 +174,8 @@ impl Node {
                 // create new leaf node by splitting child
                 let internal_len = new_internal_rc.borrow().string_index.1 - new_internal_rc.borrow().string_index.0;
                 let mut new_leaf_node = Node::new(config);
+                new_leaf_node.source_string = source_string;
+                new_leaf_node.node_color = source_string as isize;
                 new_leaf_node.parent = Some(new_internal_rc.clone()); //set the parent
                 new_leaf_node.depth = new_internal_rc.borrow().depth + 1;
                 new_leaf_node.string_index = (index + internal_len, config.strings[rc.borrow().source_string].len()); //set the start index after the current node's length
@@ -189,6 +198,8 @@ impl Node {
 
         // didn't find a good child, so add a new one
         let mut new_node = Node::new(config);
+        new_node.source_string = source_string;
+        new_node.node_color = source_string as isize;
         new_node.parent = Some(rc.clone()); //set the parent
         new_node.depth = rc.borrow().depth + 1;
         new_node.string_index = (index, config.strings[rc.borrow().source_string].len()); //set the start index after the current node's length
