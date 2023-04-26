@@ -88,7 +88,7 @@ fn main() {
     let file_as_str = fs::read_to_string(strings_file).expect("Error reading file");
     let file_lines = file_as_str.lines();
     
-    let mut string_vec: Vec<NamedString> = Vec::new();
+    let mut string_vec: Vec<NamedString> = Vec::new(); //a collection of all the strings and their names
     for line in file_lines { //for each file we have to find
         let this_string_file = fs::read_to_string(line).expect("Error reading string file");
         let this_string_lines = this_string_file.lines();
@@ -123,7 +123,7 @@ fn main() {
 
     tree.color_tree();
     let fingerprints = tree.get_fingerprints();
-    //tree.print_tree();
+    tree.print_tree();
 
     let mut output_str = String::from("");
     for i in 0..string_vec.len() { //iterate through every string

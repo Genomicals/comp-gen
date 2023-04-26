@@ -53,6 +53,7 @@ impl Interface {
         Interface::color_tree_recursive(self.root.clone());
     }
     fn color_tree_recursive(node: Rc<RefCell<Node>>) {
+        println!("recursion called!");
         let children = node.borrow().children.clone();
         //println!("um, here?");
 
@@ -64,15 +65,28 @@ impl Interface {
         let mut color = children[0].borrow().node_color; //will inherit a pure or mixed color from children
         if color == -1 {
             node.borrow_mut().node_color = -1; //if the first child is mixed, then we must be mixed
+            //println!("early return");
             return;
         }
         for child in children {
             Interface::color_tree_recursive(child.clone());
             if child.borrow().node_color != color {
-                color = -1; //if any node color doesn't match up with the initial, then this node must be mixed color
-                break;
+                color = -1;
+                //println!("early return");
+                node.borrow_mut().node_color = -1; //if any node color doesn't match up with the initial, then this node must be mixed color
+                //return;
+            } else {
+                //println!("cur color: {}, child: {}", color, child.borrow().node_color);
             }
         }
+
+        
+        //println!("Reached node, {}", rc.borrow().as_string(config));
+
+        //for child in rc.borrow().children.clone() {
+        //    Node::print_tree(child, config);
+        //    ////println!("Returned to node {:?}", rc.borrow().id);
+        //}
 
         node.borrow_mut().node_color = color;
     }

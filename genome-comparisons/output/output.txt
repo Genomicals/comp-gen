@@ -1,22 +1,7 @@
->MT007544.1 Severe acute respiratory syndrome coronavirus 2 isolate Australia/VIC01/2020, complete genome
-0: CA
-1: CC
-2: CG
-3: CT
-4: GA
-5: GC
-6: GG
-7: GT
-8: TA
-9: TC
-10: TG
-11: TT
->MT126808.1 Severe acute respiratory syndrome coronavirus 2 isolate SARS-CoV-2/SP02/human/2020/BRA, complete genome
->MT012098.1 Severe acute respiratory syndrome coronavirus 2 isolate SARS-CoV-2/29/human/2020/IND, complete genome
->MT027063.1 Severe acute respiratory syndrome coronavirus 2 isolate 2019-nCoV/USA-CA4/2020, complete genome
->NC_045512.2 Severe acute respiratory syndrome coronavirus 2 isolate Wuhan-Hu-1, complete genome
->KF600620.1 Middle East respiratory syndrome coronavirus isolate Bisha_1_2012, complete genome
->KY581694.1 Middle East respiratory syndrome-related coronavirus strain Hu/UAE_X_2014, complete genome
->KP223131.1 Middle East respiratory syndrome coronavirus isolate Florida/USA-2_Saudi Arabia_2014, complete genome
->GU553363.1 SARS coronavirus HKU-39849 isolate TCVSP-HARROD-00001, complete genome
->MK062179.1 SARS coronavirus Urbani isolate icSARS, complete genome
+>s1
+>s2
+>s3
+>s4
+>s5
+>s6
+>s7
