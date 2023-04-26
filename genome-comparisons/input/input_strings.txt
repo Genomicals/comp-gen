@@ -3,7 +3,6 @@ Covid_Brazil.fasta
 Covid_India.fasta
 Covid_USA-CA4.fasta
 Covid_Wuhan.fasta
-input_strings.txt
 MERS_2012_KF600620.fasta
 MERS_2014_KY581694.fasta
 MERS_2014_USA_KP223131.fasta

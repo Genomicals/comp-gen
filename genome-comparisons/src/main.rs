@@ -117,6 +117,7 @@ fn main() {
     let mut tree = Interface::new();
     tree.make_tree(&string_vec[0].string, &alphabet, 0); //start adding every string to the tree
     for i in 1..string_vec.len() {
+        println!("inserting string {}", i);
         tree.add_string(&string_vec[i].string, i);
     }
 

@@ -18,6 +18,7 @@ impl Interface {
 
     /// Creates a suffix tree with the given string and alphabet, includes suffix links
     pub fn make_tree(&mut self, string: &str, alphabet: &HashSet<char>, source_string: usize) -> Rc<RefCell<Node>> {
+        println!("CREATING STRING FROM: {}", string);
         let mut config = TreeConfig::new(&(String::from(string) + "$"), alphabet.clone());
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
         self.config = config;
@@ -36,8 +37,9 @@ impl Interface {
 
     /// Adds another string to this suffix tree
     pub fn add_string(&mut self, string: &str, source_string: usize) {
-        let mut cur = Node::find_path(self.root.clone(), 0, source_string, &mut self.config);
-        self.config.strings.push(String::from(string)); //add the new string to the list
+        println!("CREATING STRING FROM: {}", string);
+        self.config.strings.push(String::from(string) + "$"); //add the new string to the list
+        let mut cur = Node::find_path(self.root.clone(), 0, source_string, &mut self.config); //insert whole string, retrieve a pointer in the process
 
         for i in 1..string.len() {
             cur = Node::suffix_link_insert(cur.clone(), i, source_string, &mut self.config);
