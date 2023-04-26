@@ -159,11 +159,12 @@ impl Node {
                 let mut new_children = rc.borrow().children.clone();
                 new_children.remove(index_of_child_in_rc);
                 new_children.push(new_internal_rc.clone());
+                let cur_source_string = rc.borrow().source_string;
                 rc.borrow_mut().children = new_children;
                 rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
                     let x_indices = x.borrow().string_index;
                     let y_indices = y.borrow().string_index;
-                    if config.strings[rc.borrow().source_string][x_indices.0..x_indices.1] > config.strings[rc.borrow().source_string][y_indices.0..y_indices.1] {
+                    if config.strings[cur_source_string][x_indices.0..x_indices.1] > config.strings[cur_source_string][y_indices.0..y_indices.1] {
                         std::cmp::Ordering::Greater
                     } else {
                         std::cmp::Ordering::Less
@@ -205,11 +206,12 @@ impl Node {
         new_node.string_index = (index, config.strings[rc.borrow().source_string].len()); //set the start index after the current node's length
         new_node.string_depth = rc.borrow().string_depth + config.strings[rc.borrow().source_string].len() - new_node.string_index.0;
         let new_node_rc = Rc::new(RefCell::new(new_node));
+        let cur_source_string = rc.borrow().source_string;
         rc.borrow_mut().children.push(new_node_rc.clone());
         rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
-                let x_indices = x.borrow().string_index;
-                let y_indices = y.borrow().string_index;
-                if config.strings[rc.borrow().source_string][x_indices.0..x_indices.1] > config.strings[rc.borrow().source_string][y_indices.0..y_indices.1] {
+            let x_indices = x.borrow().string_index;
+            let y_indices = y.borrow().string_index;
+            if config.strings[cur_source_string][x_indices.0..x_indices.1] > config.strings[cur_source_string][y_indices.0..y_indices.1] {
                 std::cmp::Ordering::Greater
             } else {
                 std::cmp::Ordering::Less
@@ -297,11 +299,12 @@ impl Node {
                     let mut new_children = rc.borrow().children.clone();
                     new_children.remove(index_of_child_in_rc);
                     new_children.push(new_internal_rc.clone());
+                    let cur_source_string = rc.borrow().source_string;
                     rc.borrow_mut().children = new_children;
                     rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
                         let x_indices = x.borrow().string_index;
                         let y_indices = y.borrow().string_index;
-                        if config.strings[rc.borrow().source_string][x_indices.0..x_indices.1] > config.strings[rc.borrow().source_string][y_indices.0..y_indices.1] {
+                        if config.strings[cur_source_string][x_indices.0..x_indices.1] > config.strings[cur_source_string][y_indices.0..y_indices.1] {
                             std::cmp::Ordering::Greater
                         } else {
                             std::cmp::Ordering::Less

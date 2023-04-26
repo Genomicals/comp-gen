@@ -74,10 +74,53 @@ impl Interface {
 
     /// Returns a vector of fingerprints for each string in the tree
     pub fn get_fingerprints(&mut self) -> Vec<Vec<String>> {
-        let fingerprints = Vec::with_capacity(self.config.strings.len());
-        
+        let mut fingerprints = Vec::with_capacity(self.config.strings.len());
+        let mut fingerprint_nodes = Vec::with_capacity(self.config.strings.len()); //helps keep track of fingerprints while discovering them
 
+        Interface::get_fingerprints_recursive(self.root.clone(), &mut fingerprint_nodes);
+        let collected_nodes: Vec<Vec<Rc<RefCell<Node>>>> = fingerprint_nodes.into_iter().map(|elem| elem.1).collect(); //into_iter() consumes the vector, no borrow errors like you get with iter()
+
+        // although this is a triple-nested loop, ultimately the runtime complexity shouldn't be affected because these for-loops are limited in how large they can get
+        for i in 0..collected_nodes.len() { //iterate through all string indices
+            let mut new_fingerprints = Vec::with_capacity(collected_nodes[i].len());
+
+            for j in &collected_nodes[i] { //iterate through all nodes collected for the current string index
+                //let cur_string = j.borrow().st
+                let cur_string = Node::reconstruct_string(j.clone(), &self.config);
+                //let children = j.borrow().children;
+
+                for child in &j.borrow().children { //iterate through all of this node's children
+                    let first_char = self.config.strings[i].as_bytes()[child.borrow().string_index.0] as char;
+                    let mut new_str = cur_string.clone();
+                    new_str.push(first_char);
+                    new_fingerprints.push(new_str); //push this child's fingerprint to the list of new fingerprints
+                }
+            }
+            fingerprints.push(new_fingerprints); //push all the fingerprints collected for string i onto the return vector
+        }
         fingerprints
+    }
+    fn get_fingerprints_recursive(node: Rc<RefCell<Node>>, fingerprints: &mut Vec<(usize, Vec<Rc<RefCell<Node>>>)>) {
+        let children = node.borrow().children.clone();
+
+        if children.len() == 0 { //ignore any leaf nodes
+            return;
+        }
+
+        for child in children {
+            if child.borrow().node_color != -1 { //found an unmixed child
+                let color = child.borrow().node_color as usize;
+                if fingerprints[color].0 > node.borrow().string_depth { //already obtained deeper fingerprints for this color
+                    continue;
+                }
+                if fingerprints[color].0 < node.borrow().string_depth { //found deeper fingerprints than what we have, remove all collected nodes in favor of new ones
+                    fingerprints[color] = (node.borrow().string_depth, Vec::new()); //this will automatically activate the following if-condition as well
+                }
+                if fingerprints[color].0 == node.borrow().string_depth { //add the current fingerprint to the existing list of equally-depthed node candidates
+                    fingerprints[color].1.push(child.clone());
+                }
+            }
+        }
 
     }
 

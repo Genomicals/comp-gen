@@ -87,19 +87,58 @@ fn main() {
     }
     let file_as_str = fs::read_to_string(strings_file).expect("Error reading file");
     let file_lines = file_as_str.lines();
+    
     let mut string_vec: Vec<NamedString> = Vec::new();
-    for line in file_lines {
-        if line.starts_with(">") { // skip this line but push a new string
-            string_vec.push(NamedString::name(&line[1..line.len()])); //copy from the 1st index to the end
-            continue;
-        } else {
-            string_vec.last_mut().expect("Input strings were in the wrong format").string.push_str(line);
+    for line in file_lines { //for each file we have to find
+        let this_string_file = fs::read_to_string(line).expect("Error reading string file");
+        let this_string_lines = this_string_file.lines();
+        for line in this_string_lines {
+            if line.starts_with(">") { // skip this line but push a new string
+                string_vec.push(NamedString::name(&line[1..line.len()])); //copy from the 1st index to the end
+                continue;
+            } else {
+                string_vec.last_mut().expect("Input strings were in the wrong format").string.push_str(line);
+            }
         }
     }
 
-    println!("well, all the formatting was done correctly");
+    //println!("well, all the formatting was done correctly");
     //config.s1_name = string_vec[0].name.clone();
     //config.s2_name = string_vec[1].name.clone();
 
+    //build a tree with 
+
+    let mut alphabet: HashSet<char> = HashSet::new();
+    alphabet.insert('A');
+    alphabet.insert('C');
+    alphabet.insert('G');
+    alphabet.insert('T');
+
+    let mut tree = Interface::new();
+    tree.make_tree(&string_vec[0].string, &alphabet, 0); //start adding every string to the tree
+    for i in 1..string_vec.len() {
+        tree.add_string(&string_vec[i].string, i);
+    }
+
+    tree.color_tree();
+    let fingerprints = tree.get_fingerprints();
+
+    let mut output_str = String::from("");
+    for i in 0..string_vec.len() { //iterate through every string
+        output_str += ">";
+        output_str += &string_vec[i].name;
+        output_str += "\n";
+        for j in 0..fingerprints[i].len() { //iterate through every fingerprint for this string
+            output_str += &j.to_string(); //indicator for which fingerprint
+            output_str += ": ";
+            output_str += &fingerprints[i][j]; //print the actual fingerprint
+            output_str += "\n";
+        }
+    }
+
+    let full_file_name = String::from("../output/output.txt");
+    fs::write(&full_file_name, output_str).expect("Unable to write file");
+
 
 }
+
