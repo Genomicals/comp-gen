@@ -53,7 +53,7 @@ impl Interface {
         Interface::color_tree_recursive(self.root.clone());
     }
     fn color_tree_recursive(node: Rc<RefCell<Node>>) {
-        println!("recursion called!");
+        //println!("recursion called!");
         let children = node.borrow().children.clone();
         //println!("um, here?");
 
