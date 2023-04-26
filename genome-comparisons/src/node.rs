@@ -123,7 +123,7 @@ impl Node {
             println!("{:?}, {}", &string_indices, &child.borrow().source_string);
             println!("{}", config.strings[child.borrow().source_string][string_indices.0..string_indices.1].as_bytes()[0]);
             if target_str.len() == 0 {
-                println!("well shit hit the fan");
+                println!("bad indices created");
             }
             println!("{}", target_str.as_bytes()[0]);
             if config.strings[child.borrow().source_string][string_indices.0..string_indices.1].as_bytes()[0] == target_str.as_bytes()[0] { //found a child to split or recurse to
@@ -155,13 +155,17 @@ impl Node {
                 new_internal_rc.borrow_mut().source_string = child.borrow().source_string;
                 new_internal_rc.borrow_mut().node_color = child.borrow().node_color;
                 new_internal_rc.borrow_mut().string_index = (child.borrow().string_index.0, child.borrow().string_index.0 + split_index);
+                if new_internal_rc.borrow().string_index.0 >= new_internal_rc.borrow().string_index.1 {
+                    println!("created another set of bad indices here");
+                }
                 new_internal_rc.borrow_mut().parent = Some(rc.clone());
                 new_internal_rc.borrow_mut().children.push(child.clone()); //no need to sort, only one child
                 new_internal_rc.borrow_mut().depth = rc.borrow().depth + 1;
                 new_internal_rc.borrow_mut().string_depth = rc.borrow().string_depth + split_index;
 
                 // update child
-                let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
+                //let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
+                let new_indices = (child.borrow().string_index.0 + split_index, child.borrow().string_index.1);
                 child.borrow_mut().string_index = new_indices;
                 child.borrow_mut().depth += 1;
                 child.borrow_mut().parent = Some(new_internal_rc.clone());
@@ -193,8 +197,11 @@ impl Node {
                 new_leaf_node.node_color = source_string as isize;
                 new_leaf_node.parent = Some(new_internal_rc.clone()); //set the parent
                 new_leaf_node.depth = new_internal_rc.borrow().depth + 1;
-                new_leaf_node.string_index = (index + internal_len, config.strings[rc.borrow().source_string].len()); //set the start index after the current node's length
-                new_leaf_node.string_depth = new_internal_rc.borrow().string_depth + config.strings[rc.borrow().source_string].len() - new_leaf_node.string_index.0;
+                new_leaf_node.string_index = (index + internal_len, config.strings[source_string].len()); //set the start index after the current node's length
+                if new_leaf_node.string_index.0 >= new_leaf_node.string_index.1 {
+                    println!("created invalid indices");
+                }
+                new_leaf_node.string_depth = new_internal_rc.borrow().string_depth + config.strings[source_string].len() - new_leaf_node.string_index.0; //HERE made potentially bad changes
                 let new_leaf_rc = Rc::new(RefCell::new(new_leaf_node));
                 new_internal_rc.borrow_mut().children.push(new_leaf_rc.clone());
                 new_internal_rc.borrow_mut().children.sort_by(|x, y| { //alphabetically sort the list of children
@@ -220,8 +227,11 @@ impl Node {
         new_node.node_color = source_string as isize;
         new_node.parent = Some(rc.clone()); //set the parent
         new_node.depth = rc.borrow().depth + 1;
-        new_node.string_index = (index, config.strings[rc.borrow().source_string].len()); //set the start index after the current node's length
-        new_node.string_depth = rc.borrow().string_depth + config.strings[rc.borrow().source_string].len() - new_node.string_index.0;
+        new_node.string_index = (index, config.strings[source_string].len()); //set the start index after the current node's length
+        if new_node.string_index.0 >= new_node.string_index.1 {
+            println!("created invalid indices here too");
+        }
+        new_node.string_depth = rc.borrow().string_depth + config.strings[source_string].len() - new_node.string_index.0;
         let new_node_rc = Rc::new(RefCell::new(new_node));
         //let cur_source_string = rc.borrow().source_string;
         rc.borrow_mut().children.push(new_node_rc.clone());
@@ -267,8 +277,8 @@ impl Node {
 
 
     /// Return the node contaning the given string under the given node, create an internal node if valid
-    pub fn node_hops(mut rc: Rc<RefCell<Node>>, alpha: (usize, usize), config: &mut TreeConfig) -> Option<Rc<RefCell<Node>>> {
-        let mut target_string = &config.strings[rc.borrow().source_string][alpha.0..alpha.1];
+    pub fn node_hops(mut rc: Rc<RefCell<Node>>, alpha: (usize, usize), source_string: usize, config: &mut TreeConfig) -> Option<Rc<RefCell<Node>>> {
+        let mut target_string = &config.strings[source_string][alpha.0..alpha.1];
         'outer: loop {
             if target_string.len() == 0 {
                 return Some(rc.clone());
@@ -277,9 +287,9 @@ impl Node {
             for child in &mut rc_children {
                 let child_indices = child.borrow().string_index;
                 let child_str = &config.strings[child.borrow().source_string][child_indices.0..child_indices.1];
-                if target_string == child_str {
-                    return Some(child.clone()); //found the node we want, return it
-                }
+                //if target_string == child_str {
+                //    return Some(child.clone()); //found the node we want, return it
+                //}
                 if target_string.starts_with(child_str) { //found viable child
                     if target_string == child_str {
                         return Some(child.clone()); //found the node we want, return it
@@ -302,14 +312,21 @@ impl Node {
                     new_internal_rc.borrow_mut().source_string = child.borrow().source_string;
                     new_internal_rc.borrow_mut().node_color = child.borrow().node_color;
                     new_internal_rc.borrow_mut().string_index = (child.borrow().string_index.0, child.borrow().string_index.0 + split_index);
+                    if new_internal_rc.borrow().string_index.0 >= new_internal_rc.borrow().string_index.1 {
+                        println!("mmmmm created bad indices");
+                    }
                     new_internal_rc.borrow_mut().parent = Some(rc.clone());
                     new_internal_rc.borrow_mut().children.push(child.clone()); //no need to sort, only one child
                     new_internal_rc.borrow_mut().depth = rc.borrow().depth + 1;
                     new_internal_rc.borrow_mut().string_depth = rc.borrow().string_depth + split_index;
 
                     // update child
-                    let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
+                    //let new_indices = (new_internal_rc.borrow().string_index.1, child.borrow().string_index.1);
+                    let new_indices = (child.borrow().string_index.0 + split_index, child.borrow().string_index.1);
                     child.borrow_mut().string_index = new_indices;
+                    if child.borrow().string_index.0 >= child.borrow().string_index.1 {
+                        println!("created bad indices down here as well");
+                    }
                     child.borrow_mut().depth += 1;
                     child.borrow_mut().parent = Some(new_internal_rc.clone());
 
@@ -369,12 +386,12 @@ impl Node {
                 // the grandparent is not the root, CASE IIA
                 let v_start = index + v_prime_rc.borrow().string_depth; //end of v'
                 let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u
-                v_rc = Node::node_hops(v_prime_rc.clone(), (v_start, v_start + beta_len), config).unwrap(); //from end of v' through beta
+                v_rc = Node::node_hops(v_prime_rc.clone(), (v_start, v_start + beta_len), source_string, config).unwrap(); //from end of v' through beta
             } else {
                 // the grandparent is the root, CASE IIB
                 // v_prime ends at 0, because it's the root
                 let beta_len = u_rc.borrow().string_index.1 - u_rc.borrow().string_index.0; //length of beta, string between u' and u - 1, NOTE: beta_prime is one less than beta
-                v_rc = Node::node_hops(v_prime_rc.clone(), (index, index + beta_len - 1), config).unwrap(); //from end of v' through beta
+                v_rc = Node::node_hops(v_prime_rc.clone(), (index, index + beta_len - 1), source_string, config).unwrap(); //from end of v' through beta
             }
             u_rc.borrow_mut().suffix_link = Some(v_rc.clone()); //establish link
             let new_index = rc.borrow().string_index.0; //new index should be the old rc's index

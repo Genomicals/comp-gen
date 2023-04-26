@@ -77,7 +77,8 @@ impl Interface {
     /// Returns a vector of fingerprints for each string in the tree
     pub fn get_fingerprints(&mut self) -> Vec<Vec<String>> {
         let mut fingerprints = Vec::with_capacity(self.config.strings.len());
-        let mut fingerprint_nodes = Vec::with_capacity(self.config.strings.len()); //helps keep track of fingerprints while discovering them
+        //let mut fingerprint_nodes = Vec::with_capacity(self.config.strings.len()); //helps keep track of fingerprints while discovering them
+        let mut fingerprint_nodes = vec![(0, Vec::new()); self.config.strings.len()];
 
         Interface::get_fingerprints_recursive(self.root.clone(), &mut fingerprint_nodes);
         let collected_nodes: Vec<Vec<Rc<RefCell<Node>>>> = fingerprint_nodes.into_iter().map(|elem| elem.1).collect(); //into_iter() consumes the vector, no borrow errors like you get with iter()
@@ -92,6 +93,10 @@ impl Interface {
                 //let children = j.borrow().children;
 
                 for child in &j.borrow().children { //iterate through all of this node's children
+                    println!("there are in fact {} colors", self.config.strings.len());
+                    println!("1: {}", i);
+                    println!("2: {}", child.borrow().string_index.0);
+                    println!("3: {}", child.borrow().source_string);
                     let first_char = self.config.strings[i].as_bytes()[child.borrow().string_index.0] as char;
                     let mut new_str = cur_string.clone();
                     new_str.push(first_char);
@@ -112,6 +117,7 @@ impl Interface {
         for child in children {
             if child.borrow().node_color != -1 { //found an unmixed child
                 let color = child.borrow().node_color as usize;
+                println!("color: {}", color);
                 if fingerprints[color].0 > node.borrow().string_depth { //already obtained deeper fingerprints for this color
                     continue;
                 }
