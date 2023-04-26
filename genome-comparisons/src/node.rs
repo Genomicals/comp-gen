@@ -66,6 +66,12 @@ impl Node {
     }
 
 
+    /// Returns the edge label for this node
+    pub fn get_edge_string(&self, config: &TreeConfig) -> String {
+        String::from(&config.strings[self.source_string][self.string_index.0..self.string_index.1])
+    }
+
+
     // Reconstructs the string above the current node
     pub fn reconstruct_string_separators(rc: Rc<RefCell<Node>>, config: &TreeConfig) -> String {
         //println!("<<-- Visited node: {}", rc.borrow().as_string(config));
