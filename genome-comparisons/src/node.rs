@@ -50,7 +50,7 @@ impl Node {
 
     /// Prints the current node's info
     pub fn as_string(&self, config: &TreeConfig) -> String {
-        format!("id: {:?}, depth: {:?}, string_depth: {:?}, num_children: {}, edge: {}\"{}\"{}, str_above: \"{}\"",
+        format!("id: {:?}, depth: {:?}, string_depth: {:?}, num_children: {}, edge: {}\"{}\"{}, str_above: \"{}\", source: {}, color: {}",
             self.id,
             self.depth,
             self.string_depth,
@@ -59,7 +59,9 @@ impl Node {
             //self.get_string(config),
             &config.strings[self.source_string][self.string_index.0..self.string_index.1],
             self.string_index.1,
-            Node::reconstruct_string(self.parent.clone().unwrap(), config)
+            Node::reconstruct_string(self.parent.clone().unwrap(), config),
+            self.source_string,
+            self.node_color,
         )
     }
 
@@ -95,7 +97,7 @@ impl Node {
 
     /// Depth-first print, for debugging
     pub fn print_tree(rc: Rc<RefCell<Node>>, config: &TreeConfig) {
-        //println!("Reached node, {}", rc.borrow().as_string(config));
+        println!("Reached node, {}", rc.borrow().as_string(config));
 
         for child in rc.borrow().children.clone() {
             Node::print_tree(child, config);
@@ -119,13 +121,13 @@ impl Node {
         let rc_children = rc.borrow().children.clone();
         for child in &rc_children {
             let string_indices = child.borrow().string_index;
-            println!("{}", config.strings[child.borrow().source_string].len());
-            println!("{:?}, {}", &string_indices, &child.borrow().source_string);
-            println!("{}", config.strings[child.borrow().source_string][string_indices.0..string_indices.1].as_bytes()[0]);
+            //println!("{}", config.strings[child.borrow().source_string].len());
+            //println!("{:?}, {}", &string_indices, &child.borrow().source_string);
+            //println!("{}", config.strings[child.borrow().source_string][string_indices.0..string_indices.1].as_bytes()[0]);
             if target_str.len() == 0 {
-                println!("bad indices created");
+                //println!("bad indices created");
             }
-            println!("{}", target_str.as_bytes()[0]);
+            //println!("{}", target_str.as_bytes()[0]);
             if config.strings[child.borrow().source_string][string_indices.0..string_indices.1].as_bytes()[0] == target_str.as_bytes()[0] { //found a child to split or recurse to
                 let child_str = &config.strings[child.borrow().source_string][string_indices.0..string_indices.1];
                 let mut split_index = 0;
@@ -191,9 +193,9 @@ impl Node {
                 let internal_len = new_internal_rc.borrow().string_index.1 - new_internal_rc.borrow().string_index.0;
                 let mut new_leaf_node = Node::new(config);
                 new_leaf_node.source_string = source_string;
-                if source_string == 1 {
-                    println!("inserted a 1");
-                }
+                //if source_string == 1 {
+                //    println!("inserted a 1");
+                //}
                 new_leaf_node.node_color = source_string as isize;
                 new_leaf_node.parent = Some(new_internal_rc.clone()); //set the parent
                 new_leaf_node.depth = new_internal_rc.borrow().depth + 1;
@@ -221,9 +223,9 @@ impl Node {
         // didn't find a good child, so add a new one
         let mut new_node = Node::new(config);
         new_node.source_string = source_string;
-        if source_string == 1 {
-            println!("inserted a 1");
-        }
+        //if source_string == 1 {
+        //    println!("inserted a 1");
+        //}
         new_node.node_color = source_string as isize;
         new_node.parent = Some(rc.clone()); //set the parent
         new_node.depth = rc.borrow().depth + 1;
@@ -357,7 +359,7 @@ impl Node {
 
     /// Insert the given suffix, provided the previous suffix
     pub fn suffix_link_insert(rc: Rc<RefCell<Node>>, index: usize, source_string: usize, config: &mut TreeConfig) -> Rc<RefCell<Node>> {
-        println!("inserting new");
+        //println!("inserting new");
         let u_rc_maybe = rc.clone().borrow().parent.clone();
         if let None = u_rc_maybe {
             return rc;

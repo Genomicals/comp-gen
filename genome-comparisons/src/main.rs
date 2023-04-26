@@ -117,12 +117,13 @@ fn main() {
     let mut tree = Interface::new();
     tree.make_tree(&string_vec[0].string, &alphabet, 0); //start adding every string to the tree
     for i in 1..string_vec.len() {
-        println!("inserting string {}", i);
+        //println!("inserting string {}", i);
         tree.add_string(&string_vec[i].string, i);
     }
 
     tree.color_tree();
     let fingerprints = tree.get_fingerprints();
+    //tree.print_tree();
 
     let mut output_str = String::from("");
     for i in 0..string_vec.len() { //iterate through every string

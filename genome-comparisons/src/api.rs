@@ -18,7 +18,7 @@ impl Interface {
 
     /// Creates a suffix tree with the given string and alphabet, includes suffix links
     pub fn make_tree(&mut self, string: &str, alphabet: &HashSet<char>, source_string: usize) -> Rc<RefCell<Node>> {
-        println!("CREATING STRING FROM: {}", string);
+        //println!("CREATING STRING FROM: {}", string);
         let mut config = TreeConfig::new(&(String::from(string) + "$"), alphabet.clone());
         self.root = Rc::new(RefCell::new(Node::new(&mut config)));
         self.config = config;
@@ -37,7 +37,7 @@ impl Interface {
 
     /// Adds another string to this suffix tree
     pub fn add_string(&mut self, string: &str, source_string: usize) {
-        println!("CREATING STRING FROM: {}", string);
+        //println!("CREATING STRING FROM: {}", string);
         self.config.strings.push(String::from(string) + "$"); //add the new string to the list
         let mut cur = Node::find_path(self.root.clone(), 0, source_string, &mut self.config); //insert whole string, retrieve a pointer in the process
 
@@ -49,12 +49,15 @@ impl Interface {
 
     /// Color the tree nodes
     pub fn color_tree(&mut self) {
+        //println!("coloring");
         Interface::color_tree_recursive(self.root.clone());
     }
     fn color_tree_recursive(node: Rc<RefCell<Node>>) {
         let children = node.borrow().children.clone();
+        //println!("um, here?");
 
         if children.len() == 0 { //don't change the color of leaves
+            //println!("found a leaf");
             return;
         }
 
@@ -64,6 +67,7 @@ impl Interface {
             return;
         }
         for child in children {
+            Interface::color_tree_recursive(child.clone());
             if child.borrow().node_color != color {
                 color = -1; //if any node color doesn't match up with the initial, then this node must be mixed color
                 break;
@@ -93,10 +97,13 @@ impl Interface {
                 //let children = j.borrow().children;
 
                 for child in &j.borrow().children { //iterate through all of this node's children
-                    println!("there are in fact {} colors", self.config.strings.len());
-                    println!("1: {}", i);
-                    println!("2: {}", child.borrow().string_index.0);
-                    println!("3: {}", child.borrow().source_string);
+                    if child.borrow().node_color != i as isize { //ignore any children that don't match the color we're looking for
+                        continue;
+                    }
+                    //println!("there are in fact {} colors", self.config.strings.len());
+                    //println!("1: {}", i);
+                    //println!("3: {}", child.borrow().source_string);
+                    //println!("2: {}", child.borrow().string_index.0);
                     let first_char = self.config.strings[i].as_bytes()[child.borrow().string_index.0] as char;
                     let mut new_str = cur_string.clone();
                     new_str.push(first_char);
@@ -117,7 +124,7 @@ impl Interface {
         for child in children {
             if child.borrow().node_color != -1 { //found an unmixed child
                 let color = child.borrow().node_color as usize;
-                println!("color: {}", color);
+                //println!("color: {}", color);
                 if fingerprints[color].0 > node.borrow().string_depth { //already obtained deeper fingerprints for this color
                     continue;
                 }
@@ -235,6 +242,7 @@ impl Interface {
   
     /// Prints the tree, for debugging
     pub fn print_tree(&self) {
+        println!("here");
         Node::print_tree(self.root.clone(), &self.config);
     }
 }
