@@ -88,7 +88,7 @@ impl Node {
     }
 
 
-    // Reconstructs the string above the current node
+    /// Reconstructs the string above the current node
     pub fn reconstruct_string(rc: Rc<RefCell<Node>>, config: &TreeConfig) -> String {
         if rc.borrow().string_index.1 == 0 {
             return String::new();

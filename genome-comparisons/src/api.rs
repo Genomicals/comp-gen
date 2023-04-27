@@ -100,13 +100,13 @@ impl Interface {
 
         self.get_fingerprints_recursive(self.root.clone(), &mut fingerprint_nodes);
         //println!("{}", &fingerprint_nodes.len());
-        println!("{}", &fingerprint_nodes[0].0);
-        println!("{}", &fingerprint_nodes[1].0);
-        println!("{}", &fingerprint_nodes[2].0);
-        println!("{}", &fingerprint_nodes[3].0);
-        println!("{}", &fingerprint_nodes[4].0);
-        println!("{}", &fingerprint_nodes[5].0);
-        println!("{}", &fingerprint_nodes[6].0);
+        println!("{}, {}", &fingerprint_nodes[0].0, &fingerprint_nodes[0].1.len());
+        println!("{}, {}", &fingerprint_nodes[1].0, &fingerprint_nodes[1].1.len());
+        println!("{}, {}", &fingerprint_nodes[2].0, &fingerprint_nodes[2].1.len());
+        println!("{}, {}", &fingerprint_nodes[3].0, &fingerprint_nodes[3].1.len());
+        println!("{}, {}", &fingerprint_nodes[4].0, &fingerprint_nodes[4].1.len());
+        println!("{}, {}", &fingerprint_nodes[5].0, &fingerprint_nodes[5].1.len());
+        println!("{}, {}", &fingerprint_nodes[6].0, &fingerprint_nodes[6].1.len());
         let collected_nodes: Vec<Vec<Rc<RefCell<Node>>>> = fingerprint_nodes.into_iter().map(|elem| elem.1).collect(); //into_iter() consumes the vector, no borrow errors like you get with iter()
 
         // although this is a triple-nested loop, ultimately the runtime complexity shouldn't be affected because these for-loops are limited in how large they can get
@@ -127,9 +127,12 @@ impl Interface {
                     //println!("1: {}", i);
                     //println!("3: {}", child.borrow().source_string);
                     //println!("2: {}", child.borrow().string_index.0);
+                    println!("here");
+                    println!("adding: {}", self.config.strings[i].as_bytes()[child.borrow().string_index.0] as char);
                     let first_char = self.config.strings[i].as_bytes()[child.borrow().string_index.0] as char;
                     let mut new_str = cur_string.clone();
                     new_str.push(first_char);
+                    println!("adding: {}", new_str);
                     new_fingerprints.push(new_str); //push this child's fingerprint to the list of new fingerprints
                 }
             }
@@ -147,26 +150,26 @@ impl Interface {
         for child in children {
             self.get_fingerprints_recursive(child.clone(), fingerprints);
             if node.borrow().id == 0 {
-                println!("in root's child =====================");
-                println!("child color: {}", child.borrow().node_color);
+                //println!("in root's child =====================");
+                //println!("child color: {}", child.borrow().node_color);
             }
-            if child.borrow().node_color != -1 && child.borrow().get_edge_string(&self.config).as_bytes()[0] as char != '$' { //found an unmixed child
+            if child.borrow().node_color != -1 && child.borrow().get_edge_string(&self.config) != "$" { //found an unmixed child
                 let color = child.borrow().node_color as usize;
                 //println!("color: {}", color);
                 if fingerprints[color].0 < node.borrow().string_depth { //already obtained better fingerprints for this color
-                    println!("returned early");
+                    //println!("returned early");
                     continue;
                 }
                 if fingerprints[color].0 > node.borrow().string_depth { //found deeper fingerprints than what we have, remove all collected nodes in favor of new ones
                     fingerprints[color] = (node.borrow().string_depth, Vec::new()); //this will automatically activate the following if-condition as well
-                    println!("reset the list");
+                    //println!("reset the list");
                 }
                 if fingerprints[color].0 == node.borrow().string_depth { //add the current fingerprint to the existing list of equally-depthed node candidates
-                    fingerprints[color].1.push(child.clone());
-                    println!("pushed to the list");
+                    fingerprints[color].1.push(node.clone());
+                    //println!("pushed to the list");
                 }
             }
-            println!("didn't go in");
+            //println!("didn't go in");
         }
 
     }
@@ -274,7 +277,7 @@ impl Interface {
   
     /// Prints the tree, for debugging
     pub fn print_tree(&self) {
-        println!("here");
+        //println!("here");
         Node::print_tree(self.root.clone(), &self.config);
     }
 }
