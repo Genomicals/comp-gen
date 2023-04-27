@@ -93,7 +93,7 @@ impl Interface {
 
 
     /// Returns a vector of fingerprints for each string in the tree
-    pub fn get_fingerprints(&mut self) -> Vec<Vec<String>> {
+    pub fn get_fingerprints(&mut self) -> Vec<HashSet<String>> {
         let mut fingerprints = Vec::with_capacity(self.config.strings.len());
         //let mut fingerprint_nodes = Vec::with_capacity(self.config.strings.len()); //helps keep track of fingerprints while discovering them
         let mut fingerprint_nodes = vec![(usize::MAX, Vec::new()); self.config.strings.len()];
@@ -111,7 +111,8 @@ impl Interface {
 
         // although this is a triple-nested loop, ultimately the runtime complexity shouldn't be affected because these for-loops are limited in how large they can get
         for i in 0..collected_nodes.len() { //iterate through all string indices
-            let mut new_fingerprints = Vec::with_capacity(collected_nodes[i].len());
+            //let mut new_fingerprints = Vec::with_capacity(collected_nodes[i].len());
+            let mut new_fingerprints = HashSet::with_capacity(collected_nodes[i].len());
 
             for j in &collected_nodes[i] { //iterate through all nodes collected for the current string index
                 //let cur_string = j.borrow().st
@@ -133,11 +134,13 @@ impl Interface {
                     let mut new_str = cur_string.clone();
                     new_str.push(first_char);
                     println!("adding: {}", new_str);
-                    new_fingerprints.push(new_str); //push this child's fingerprint to the list of new fingerprints
+                    //new_fingerprints.push(new_str); //push this child's fingerprint to the list of new fingerprints
+                    new_fingerprints.insert(new_str); //push this child's fingerprint to the list of new fingerprints
                 }
             }
             fingerprints.push(new_fingerprints); //push all the fingerprints collected for string i onto the return vector
         }
+        println!("FINAL: {:?}", fingerprints);
         fingerprints
     }
     fn get_fingerprints_recursive(&self, node: Rc<RefCell<Node>>, fingerprints: &mut Vec<(usize, Vec<Rc<RefCell<Node>>>)>) {

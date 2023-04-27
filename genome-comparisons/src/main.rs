@@ -130,10 +130,17 @@ fn main() {
         output_str += ">";
         output_str += &string_vec[i].name;
         output_str += "\n";
+        let mut finger_iter = fingerprints[i].iter();
+        if fingerprints[i].len() == 0 { //if this string has no fingerprints, just paste the whole string
+            output_str += "0: ";
+            output_str += &tree.config.strings[i][0..tree.config.strings[i].len()-1]; //grab the string but exclude the $
+            output_str += "\n";
+        }
         for j in 0..fingerprints[i].len() { //iterate through every fingerprint for this string
             output_str += &j.to_string(); //indicator for which fingerprint
             output_str += ": ";
-            output_str += &fingerprints[i][j]; //print the actual fingerprint
+            //output_str += &fingerprints[i][j]; //print the actual fingerprint
+            output_str += finger_iter.next().unwrap(); //print the actual fingerprint
             output_str += "\n";
         }
     }
